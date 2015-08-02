@@ -57,6 +57,20 @@
          double d0 = 0.03125D;
          this.field_73227_s = this.field_147430_m.func_151599_a(this.field_73227_s, (double)(p_147422_1_ * 16), (double)(p_147422_2_ * 16), 16, 16, d0 * 2.0D, d0 * 2.0D, 1.0D);
  
+@@ -195,11 +224,11 @@
+         }
+ 
+         Chunk chunk = new Chunk(this.field_73230_p, ablock, abyte, p_73154_1_, p_73154_2_);
+-        byte[] abyte1 = chunk.func_76605_m();
++        int[] abyte1 = chunk.getBiomeArray512();
+ 
+         for (int k = 0; k < abyte1.length; ++k)
+         {
+-            abyte1[k] = (byte)this.field_73231_z[k].field_76756_M;
++            abyte1[k] = (int)this.field_73231_z[k].field_76756_M;
+         }
+ 
+         chunk.func_76603_b();
 @@ -345,6 +374,8 @@
          this.field_73220_k.setSeed((long)p_73153_2_ * i1 + (long)p_73153_3_ * j1 ^ this.field_73230_p.func_72905_C());
          boolean flag = false;

@@ -77,3 +77,13 @@
          p_148840_1_.writeInt(this.field_149284_a);
          p_148840_1_.writeInt(this.field_149282_b);
          p_148840_1_.writeBoolean(this.field_149279_g);
+@@ -225,6 +244,9 @@
+             byte[] abyte2 = p_149269_0_.func_76605_m();
+             System.arraycopy(abyte2, 0, abyte, j, abyte2.length);
+             j += abyte2.length;
++            byte[] abyte3 = p_149269_0_.getBiomeMetadataArray();
++            System.arraycopy(abyte3, 0, abyte, j, abyte3.length);
++            j += abyte3.length;
+         }
+ 
+         extracted.field_150282_a = new byte[j];

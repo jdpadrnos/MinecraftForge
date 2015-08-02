@@ -1,0 +1,16 @@
+--- ../src-base/minecraft/net/minecraft/world/gen/ChunkProviderFlat.java
++++ ../src-work/minecraft/net/minecraft/world/gen/ChunkProviderFlat.java
+@@ -140,11 +140,11 @@
+ 
+         chunk.func_76603_b();
+         BiomeGenBase[] abiomegenbase = this.field_73163_a.func_72959_q().func_76933_b((BiomeGenBase[])null, p_73154_1_ * 16, p_73154_2_ * 16, 16, 16);
+-        byte[] abyte = chunk.func_76605_m();
++        int[] abyte = chunk.getBiomeArray512();
+ 
+         for (l = 0; l < abyte.length; ++l)
+         {
+-            abyte[l] = (byte)abiomegenbase[l].field_76756_M;
++            abyte[l] = (int)abiomegenbase[l].field_76756_M;
+         }
+ 
+         Iterator iterator = this.field_82696_f.iterator();
