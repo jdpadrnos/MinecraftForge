@@ -1,17 +1,35 @@
+/*
+ * Minecraft Forge
+ * Copyright (c) 2016.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation version 2.1
+ * of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
 package net.minecraftforge.oredict;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
-import java.util.RandomAccess;
-import java.util.Map.Entry;
 import java.util.Set;
+
+import net.minecraft.block.BlockPrismarine;
+import net.minecraft.util.ResourceLocation;
+import org.apache.logging.log4j.Level;
 
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
@@ -29,16 +47,18 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import net.minecraftforge.fml.common.FMLLog;
+import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.eventhandler.Event;
+import net.minecraftforge.fml.common.registry.GameData;
 
 public class OreDictionary
 {
     private static boolean hasInit = false;
     private static List<String>          idToName = new ArrayList<String>();
-    private static Map<String, Integer>  nameToId = new HashMap<String, Integer>();
+    private static Map<String, Integer>  nameToId = new HashMap<String, Integer>(128);
     private static List<List<ItemStack>> idToStack = Lists.newArrayList();
     private static List<List<ItemStack>> idToStackUn = Lists.newArrayList();
-    private static Map<Integer, List<Integer>> stackToId = Maps.newHashMap();
+    private static Map<Integer, List<Integer>> stackToId = Maps.newHashMapWithExpectedSize((int)(128 * 0.75));
     public static final ImmutableList<ItemStack> EMPTY_LIST = ImmutableList.of();
 
     /**
@@ -51,112 +71,201 @@ public class OreDictionary
         initVanillaEntries();
     }
 
-    @SuppressWarnings("unchecked")
-    public static void initVanillaEntries()
+    private static void initVanillaEntries()
     {
         if (!hasInit)
         {
-            registerOre("logWood",     new ItemStack(Blocks.log, 1, WILDCARD_VALUE));
-            registerOre("logWood",     new ItemStack(Blocks.log2, 1, WILDCARD_VALUE));
-            registerOre("plankWood",   new ItemStack(Blocks.planks, 1, WILDCARD_VALUE));
-            registerOre("slabWood",    new ItemStack(Blocks.wooden_slab, 1, WILDCARD_VALUE));
-            registerOre("stairWood",   Blocks.oak_stairs);
-            registerOre("stairWood",   Blocks.spruce_stairs);
-            registerOre("stairWood",   Blocks.birch_stairs);
-            registerOre("stairWood",   Blocks.jungle_stairs);
-            registerOre("stairWood",   Blocks.acacia_stairs);
-            registerOre("stairWood",   Blocks.dark_oak_stairs);
-            registerOre("stickWood",   Items.stick);
-            registerOre("treeSapling", new ItemStack(Blocks.sapling, 1, WILDCARD_VALUE));
-            registerOre("treeLeaves",  new ItemStack(Blocks.leaves, 1, WILDCARD_VALUE));
-            registerOre("treeLeaves",  new ItemStack(Blocks.leaves2, 1, WILDCARD_VALUE));
-            registerOre("oreGold",     Blocks.gold_ore);
-            registerOre("oreIron",     Blocks.iron_ore);
-            registerOre("oreLapis",    Blocks.lapis_ore);
-            registerOre("oreDiamond",  Blocks.diamond_ore);
-            registerOre("oreRedstone", Blocks.redstone_ore);
-            registerOre("oreEmerald",  Blocks.emerald_ore);
-            registerOre("oreQuartz",   Blocks.quartz_ore);
-            registerOre("oreCoal",     Blocks.coal_ore);
-            registerOre("blockGold",     Blocks.gold_block);
-            registerOre("blockIron",     Blocks.iron_block);
-            registerOre("blockLapis",    Blocks.lapis_block);
-            registerOre("blockDiamond",  Blocks.diamond_block);
-            registerOre("blockRedstone", Blocks.redstone_block);
-            registerOre("blockEmerald",  Blocks.emerald_block);
-            registerOre("blockQuartz",   Blocks.quartz_block);
-            registerOre("blockCoal",     Blocks.coal_block);
-            registerOre("blockGlassColorless", Blocks.glass);
-            registerOre("blockGlass",    Blocks.glass);
-            registerOre("blockGlass",    new ItemStack(Blocks.stained_glass, 1, WILDCARD_VALUE));
+            // tree- and wood-related things
+            registerOre("logWood",     new ItemStack(Blocks.LOG, 1, WILDCARD_VALUE));
+            registerOre("logWood",     new ItemStack(Blocks.LOG2, 1, WILDCARD_VALUE));
+            registerOre("plankWood",   new ItemStack(Blocks.PLANKS, 1, WILDCARD_VALUE));
+            registerOre("slabWood",    new ItemStack(Blocks.WOODEN_SLAB, 1, WILDCARD_VALUE));
+            registerOre("stairWood",   Blocks.OAK_STAIRS);
+            registerOre("stairWood",   Blocks.SPRUCE_STAIRS);
+            registerOre("stairWood",   Blocks.BIRCH_STAIRS);
+            registerOre("stairWood",   Blocks.JUNGLE_STAIRS);
+            registerOre("stairWood",   Blocks.ACACIA_STAIRS);
+            registerOre("stairWood",   Blocks.DARK_OAK_STAIRS);
+            registerOre("stickWood",   Items.STICK);
+            registerOre("treeSapling", new ItemStack(Blocks.SAPLING, 1, WILDCARD_VALUE));
+            registerOre("treeLeaves",  new ItemStack(Blocks.LEAVES, 1, WILDCARD_VALUE));
+            registerOre("treeLeaves",  new ItemStack(Blocks.LEAVES2, 1, WILDCARD_VALUE));
+            registerOre("vine",        Blocks.VINE);
+
+            // Ores
+            registerOre("oreGold",     Blocks.GOLD_ORE);
+            registerOre("oreIron",     Blocks.IRON_ORE);
+            registerOre("oreLapis",    Blocks.LAPIS_ORE);
+            registerOre("oreDiamond",  Blocks.DIAMOND_ORE);
+            registerOre("oreRedstone", Blocks.REDSTONE_ORE);
+            registerOre("oreEmerald",  Blocks.EMERALD_ORE);
+            registerOre("oreQuartz",   Blocks.QUARTZ_ORE);
+            registerOre("oreCoal",     Blocks.COAL_ORE);
+
+            // ingots/nuggets
+            registerOre("ingotIron",     Items.IRON_INGOT);
+            registerOre("ingotGold",     Items.GOLD_INGOT);
+            registerOre("ingotBrick",    Items.BRICK);
+            registerOre("ingotBrickNether", Items.NETHERBRICK);
+            registerOre("nuggetGold",  Items.GOLD_NUGGET);
+
+            // gems and dusts
+            registerOre("gemDiamond",  Items.DIAMOND);
+            registerOre("gemEmerald",  Items.EMERALD);
+            registerOre("gemQuartz",   Items.QUARTZ);
+            registerOre("gemPrismarine", Items.PRISMARINE_SHARD);
+            registerOre("dustPrismarine", Items.PRISMARINE_CRYSTALS);
+            registerOre("dustRedstone",  Items.REDSTONE);
+            registerOre("dustGlowstone", Items.GLOWSTONE_DUST);
+            registerOre("gemLapis",    new ItemStack(Items.DYE, 1, 4));
+
+            // storage blocks
+            registerOre("blockGold",     Blocks.GOLD_BLOCK);
+            registerOre("blockIron",     Blocks.IRON_BLOCK);
+            registerOre("blockLapis",    Blocks.LAPIS_BLOCK);
+            registerOre("blockDiamond",  Blocks.DIAMOND_BLOCK);
+            registerOre("blockRedstone", Blocks.REDSTONE_BLOCK);
+            registerOre("blockEmerald",  Blocks.EMERALD_BLOCK);
+            registerOre("blockQuartz",   Blocks.QUARTZ_BLOCK);
+            registerOre("blockCoal",     Blocks.COAL_BLOCK);
+
+            // crops
+            registerOre("cropWheat",   Items.WHEAT);
+            registerOre("cropPotato",  Items.POTATO);
+            registerOre("cropCarrot",  Items.CARROT);
+            registerOre("cropNetherWart", Items.NETHER_WART);
+            registerOre("sugarcane",   Items.REEDS);
+            registerOre("blockCactus", Blocks.CACTUS);
+
+            // misc materials
+            registerOre("dye",         new ItemStack(Items.DYE, 1, WILDCARD_VALUE));
+            registerOre("paper",       new ItemStack(Items.PAPER));
+
+            // mob drops
+            registerOre("slimeball",   Items.SLIME_BALL);
+            registerOre("enderpearl",  Items.ENDER_PEARL);
+            registerOre("bone",        Items.BONE);
+            registerOre("gunpowder",   Items.GUNPOWDER);
+            registerOre("string",      Items.STRING);
+            registerOre("netherStar",  Items.NETHER_STAR);
+            registerOre("leather",     Items.LEATHER);
+            registerOre("feather",     Items.FEATHER);
+            registerOre("egg",         Items.EGG);
+
+            // records
+            registerOre("record",      Items.RECORD_13);
+            registerOre("record",      Items.RECORD_CAT);
+            registerOre("record",      Items.RECORD_BLOCKS);
+            registerOre("record",      Items.RECORD_CHIRP);
+            registerOre("record",      Items.RECORD_FAR);
+            registerOre("record",      Items.RECORD_MALL);
+            registerOre("record",      Items.RECORD_MELLOHI);
+            registerOre("record",      Items.RECORD_STAL);
+            registerOre("record",      Items.RECORD_STRAD);
+            registerOre("record",      Items.RECORD_WARD);
+            registerOre("record",      Items.RECORD_11);
+            registerOre("record",      Items.RECORD_WAIT);
+
+            // blocks
+            registerOre("dirt",        Blocks.DIRT);
+            registerOre("grass",       Blocks.GRASS);
+            registerOre("stone",       Blocks.STONE);
+            registerOre("cobblestone", Blocks.COBBLESTONE);
+            registerOre("gravel",      Blocks.GRAVEL);
+            registerOre("sand",        new ItemStack(Blocks.SAND, 1, WILDCARD_VALUE));
+            registerOre("sandstone",   new ItemStack(Blocks.SANDSTONE, 1, WILDCARD_VALUE));
+            registerOre("sandstone",   new ItemStack(Blocks.RED_SANDSTONE, 1, WILDCARD_VALUE));
+            registerOre("netherrack",  Blocks.NETHERRACK);
+            registerOre("obsidian",    Blocks.OBSIDIAN);
+            registerOre("glowstone",   Blocks.GLOWSTONE);
+            registerOre("endstone",    Blocks.END_STONE);
+            registerOre("torch",       Blocks.TORCH);
+            registerOre("workbench",   Blocks.CRAFTING_TABLE);
+            registerOre("blockSlime",    Blocks.SLIME_BLOCK);
+            registerOre("blockPrismarine", new ItemStack(Blocks.PRISMARINE, 1, BlockPrismarine.EnumType.ROUGH.getMetadata()));
+            registerOre("blockPrismarineBrick", new ItemStack(Blocks.PRISMARINE, 1, BlockPrismarine.EnumType.BRICKS.getMetadata()));
+            registerOre("blockPrismarineDark", new ItemStack(Blocks.PRISMARINE, 1, BlockPrismarine.EnumType.DARK.getMetadata()));
+            registerOre("stoneGranite",          new ItemStack(Blocks.STONE, 1, 1));
+            registerOre("stoneGranitePolished",  new ItemStack(Blocks.STONE, 1, 2));
+            registerOre("stoneDiorite",          new ItemStack(Blocks.STONE, 1, 3));
+            registerOre("stoneDioritePolished",  new ItemStack(Blocks.STONE, 1, 4));
+            registerOre("stoneAndesite",         new ItemStack(Blocks.STONE, 1, 5));
+            registerOre("stoneAndesitePolished", new ItemStack(Blocks.STONE, 1, 6));
+            registerOre("blockGlassColorless", Blocks.GLASS);
+            registerOre("blockGlass",    Blocks.GLASS);
+            registerOre("blockGlass",    new ItemStack(Blocks.STAINED_GLASS, 1, WILDCARD_VALUE));
             //blockGlass{Color} is added below with dyes
-            registerOre("paneGlassColorless", Blocks.glass_pane);
-            registerOre("paneGlass",     Blocks.glass_pane);
-            registerOre("paneGlass",     new ItemStack(Blocks.stained_glass_pane, 1, WILDCARD_VALUE));
+            registerOre("paneGlassColorless", Blocks.GLASS_PANE);
+            registerOre("paneGlass",     Blocks.GLASS_PANE);
+            registerOre("paneGlass",     new ItemStack(Blocks.STAINED_GLASS_PANE, 1, WILDCARD_VALUE));
             //paneGlass{Color} is added below with dyes
-            registerOre("ingotIron",     Items.iron_ingot);
-            registerOre("ingotGold",     Items.gold_ingot);
-            registerOre("ingotBrick",    Items.brick);
-            registerOre("ingotBrickNether", Items.netherbrick);
-            registerOre("nuggetGold",  Items.gold_nugget);
-            registerOre("gemDiamond",  Items.diamond);
-            registerOre("gemEmerald",  Items.emerald);
-            registerOre("gemQuartz",   Items.quartz);
-            registerOre("dustRedstone",  Items.redstone);
-            registerOre("dustGlowstone", Items.glowstone_dust);
-            registerOre("gemLapis",    new ItemStack(Items.dye, 1, 4));
-            registerOre("slimeball",   Items.slime_ball);
-            registerOre("glowstone",   Blocks.glowstone);
-            registerOre("cropWheat",   Items.wheat);
-            registerOre("cropPotato",  Items.potato);
-            registerOre("cropCarrot",  Items.carrot);
-            registerOre("stone",       Blocks.stone);
-            registerOre("cobblestone", Blocks.cobblestone);
-            registerOre("sandstone",   new ItemStack(Blocks.sandstone, 1, WILDCARD_VALUE));
-            registerOre("sand",        new ItemStack(Blocks.sand, 1, WILDCARD_VALUE));
-            registerOre("dye",         new ItemStack(Items.dye, 1, WILDCARD_VALUE));
-            registerOre("record",      Items.record_13);
-            registerOre("record",      Items.record_cat);
-            registerOre("record",      Items.record_blocks);
-            registerOre("record",      Items.record_chirp);
-            registerOre("record",      Items.record_far);
-            registerOre("record",      Items.record_mall);
-            registerOre("record",      Items.record_mellohi);
-            registerOre("record",      Items.record_stal);
-            registerOre("record",      Items.record_strad);
-            registerOre("record",      Items.record_ward);
-            registerOre("record",      Items.record_11);
-            registerOre("record",      Items.record_wait);
-            registerOre("chest",       Blocks.chest);
-            registerOre("chest",       Blocks.ender_chest);
-            registerOre("chest",       Blocks.trapped_chest);
-            registerOre("chestWood",   Blocks.chest);
-            registerOre("chestEnder",  Blocks.ender_chest);
-            registerOre("chestTrapped", Blocks.trapped_chest);
+
+            // chests
+            registerOre("chest",        Blocks.CHEST);
+            registerOre("chest",        Blocks.ENDER_CHEST);
+            registerOre("chest",        Blocks.TRAPPED_CHEST);
+            registerOre("chestWood",    Blocks.CHEST);
+            registerOre("chestEnder",   Blocks.ENDER_CHEST);
+            registerOre("chestTrapped", Blocks.TRAPPED_CHEST);
         }
 
         // Build our list of items to replace with ore tags
         Map<ItemStack, String> replacements = new HashMap<ItemStack, String>();
-        replacements.put(new ItemStack(Items.stick), "stickWood");
-        replacements.put(new ItemStack(Blocks.planks), "plankWood");
-        replacements.put(new ItemStack(Blocks.planks, 1, WILDCARD_VALUE), "plankWood");
-        replacements.put(new ItemStack(Blocks.wooden_slab, 1, WILDCARD_VALUE), "slabWood");
-        replacements.put(new ItemStack(Blocks.stone), "stone");
-        //replacements.put(new ItemStack(Blocks.stone, 1, WILDCARD_VALUE), "stone");
-        replacements.put(new ItemStack(Blocks.cobblestone), "cobblestone");
-        replacements.put(new ItemStack(Blocks.cobblestone, 1, WILDCARD_VALUE), "cobblestone");
-        replacements.put(new ItemStack(Items.gold_ingot), "ingotGold");
-        replacements.put(new ItemStack(Items.iron_ingot), "ingotIron");
-        replacements.put(new ItemStack(Items.diamond), "gemDiamond");
-        replacements.put(new ItemStack(Items.emerald), "gemEmerald");
-        replacements.put(new ItemStack(Items.redstone), "dustRedstone");
-        replacements.put(new ItemStack(Items.glowstone_dust), "dustGlowstone");
-        replacements.put(new ItemStack(Blocks.glowstone), "glowstone");
-        replacements.put(new ItemStack(Items.slime_ball), "slimeball");
-        replacements.put(new ItemStack(Blocks.glass), "blockGlassColorless");
-        replacements.put(new ItemStack(Blocks.chest), "chestWood");
-        replacements.put(new ItemStack(Blocks.ender_chest), "chestEnder");
-        replacements.put(new ItemStack(Blocks.trapped_chest), "chestTrapped");
+
+        // wood-related things
+        replacements.put(new ItemStack(Items.STICK), "stickWood");
+        replacements.put(new ItemStack(Blocks.PLANKS), "plankWood");
+        replacements.put(new ItemStack(Blocks.PLANKS, 1, WILDCARD_VALUE), "plankWood");
+        replacements.put(new ItemStack(Blocks.WOODEN_SLAB, 1, WILDCARD_VALUE), "slabWood");
+
+        // ingots/nuggets
+        replacements.put(new ItemStack(Items.GOLD_INGOT), "ingotGold");
+        replacements.put(new ItemStack(Items.IRON_INGOT), "ingotIron");
+
+        // gems and dusts
+        replacements.put(new ItemStack(Items.DIAMOND), "gemDiamond");
+        replacements.put(new ItemStack(Items.EMERALD), "gemEmerald");
+        replacements.put(new ItemStack(Items.PRISMARINE_SHARD), "gemPrismarine");
+        replacements.put(new ItemStack(Items.PRISMARINE_CRYSTALS), "dustPrismarine");
+        replacements.put(new ItemStack(Items.REDSTONE), "dustRedstone");
+        replacements.put(new ItemStack(Items.GLOWSTONE_DUST), "dustGlowstone");
+
+        // crops
+        replacements.put(new ItemStack(Items.REEDS), "sugarcane");
+        replacements.put(new ItemStack(Blocks.CACTUS), "blockCactus");
+
+        // misc materials
+        replacements.put(new ItemStack(Items.PAPER), "paper");
+
+        // mob drops
+        replacements.put(new ItemStack(Items.SLIME_BALL), "slimeball");
+        replacements.put(new ItemStack(Items.STRING), "string");
+        replacements.put(new ItemStack(Items.LEATHER), "leather");
+        replacements.put(new ItemStack(Items.ENDER_PEARL), "enderpearl");
+        replacements.put(new ItemStack(Items.GUNPOWDER), "gunpowder");
+        replacements.put(new ItemStack(Items.NETHER_STAR), "netherStar");
+        replacements.put(new ItemStack(Items.FEATHER), "feather");
+        replacements.put(new ItemStack(Items.BONE), "bone");
+        replacements.put(new ItemStack(Items.EGG), "egg");
+
+        // blocks
+        replacements.put(new ItemStack(Blocks.STONE), "stone");
+        replacements.put(new ItemStack(Blocks.COBBLESTONE), "cobblestone");
+        replacements.put(new ItemStack(Blocks.COBBLESTONE, 1, WILDCARD_VALUE), "cobblestone");
+        replacements.put(new ItemStack(Blocks.GLOWSTONE), "glowstone");
+        replacements.put(new ItemStack(Blocks.GLASS), "blockGlassColorless");
+        replacements.put(new ItemStack(Blocks.PRISMARINE), "prismarine");
+        replacements.put(new ItemStack(Blocks.STONE, 1, 1), "stoneGranite");
+        replacements.put(new ItemStack(Blocks.STONE, 1, 2), "stoneGranitePolished");
+        replacements.put(new ItemStack(Blocks.STONE, 1, 3), "stoneDiorite");
+        replacements.put(new ItemStack(Blocks.STONE, 1, 4), "stoneDioritePolished");
+        replacements.put(new ItemStack(Blocks.STONE, 1, 5), "stoneAndesite");
+        replacements.put(new ItemStack(Blocks.STONE, 1, 6), "stoneAndesitePolished");
+
+        // chests
+        replacements.put(new ItemStack(Blocks.CHEST), "chestWood");
+        replacements.put(new ItemStack(Blocks.ENDER_CHEST), "chestEnder");
+        replacements.put(new ItemStack(Blocks.TRAPPED_CHEST), "chestTrapped");
 
         // Register dyes
         String[] dyes =
@@ -181,9 +290,9 @@ public class OreDictionary
 
         for(int i = 0; i < 16; i++)
         {
-            ItemStack dye = new ItemStack(Items.dye, 1, i);
-            ItemStack block = new ItemStack(Blocks.stained_glass, 1, 15 - i);
-            ItemStack pane = new ItemStack(Blocks.stained_glass_pane, 1, 15 - i);
+            ItemStack dye = new ItemStack(Items.DYE, 1, i);
+            ItemStack block = new ItemStack(Blocks.STAINED_GLASS, 1, 15 - i);
+            ItemStack pane = new ItemStack(Blocks.STAINED_GLASS_PANE, 1, 15 - i);
             if (!hasInit)
             {
                 registerOre("dye" + dyes[i], dye);
@@ -201,32 +310,32 @@ public class OreDictionary
         // Ignore recipes for the following items
         ItemStack[] exclusions = new ItemStack[]
         {
-            new ItemStack(Blocks.lapis_block),
-            new ItemStack(Items.cookie),
-            new ItemStack(Blocks.stonebrick),
-            new ItemStack(Blocks.stone_slab, 1, WILDCARD_VALUE),
-            new ItemStack(Blocks.stone_stairs),
-            new ItemStack(Blocks.cobblestone_wall),
-            new ItemStack(Blocks.oak_fence),
-            new ItemStack(Blocks.oak_fence_gate),
-            new ItemStack(Blocks.oak_stairs),
-            new ItemStack(Blocks.spruce_fence),
-            new ItemStack(Blocks.spruce_fence_gate),
-            new ItemStack(Blocks.spruce_stairs),
-            new ItemStack(Blocks.birch_fence),
-            new ItemStack(Blocks.birch_fence_gate),
-            new ItemStack(Blocks.birch_stairs),
-            new ItemStack(Blocks.jungle_fence),
-            new ItemStack(Blocks.jungle_fence_gate),
-            new ItemStack(Blocks.jungle_stairs),
-            new ItemStack(Blocks.acacia_fence),
-            new ItemStack(Blocks.acacia_fence_gate),
-            new ItemStack(Blocks.acacia_stairs),
-            new ItemStack(Blocks.dark_oak_fence),
-            new ItemStack(Blocks.dark_oak_fence_gate),
-            new ItemStack(Blocks.dark_oak_stairs),
-            new ItemStack(Blocks.wooden_slab),
-            new ItemStack(Blocks.glass_pane),
+            new ItemStack(Blocks.LAPIS_BLOCK),
+            new ItemStack(Items.COOKIE),
+            new ItemStack(Blocks.STONEBRICK),
+            new ItemStack(Blocks.STONE_SLAB, 1, WILDCARD_VALUE),
+            new ItemStack(Blocks.STONE_STAIRS),
+            new ItemStack(Blocks.COBBLESTONE_WALL),
+            new ItemStack(Blocks.OAK_FENCE),
+            new ItemStack(Blocks.OAK_FENCE_GATE),
+            new ItemStack(Blocks.OAK_STAIRS),
+            new ItemStack(Blocks.SPRUCE_FENCE),
+            new ItemStack(Blocks.SPRUCE_FENCE_GATE),
+            new ItemStack(Blocks.SPRUCE_STAIRS),
+            new ItemStack(Blocks.BIRCH_STAIRS),
+            new ItemStack(Blocks.BIRCH_FENCE_GATE),
+            new ItemStack(Blocks.BIRCH_STAIRS),
+            new ItemStack(Blocks.JUNGLE_FENCE),
+            new ItemStack(Blocks.JUNGLE_FENCE_GATE),
+            new ItemStack(Blocks.JUNGLE_STAIRS),
+            new ItemStack(Blocks.ACACIA_FENCE),
+            new ItemStack(Blocks.ACACIA_FENCE_GATE),
+            new ItemStack(Blocks.ACACIA_STAIRS),
+            new ItemStack(Blocks.DARK_OAK_FENCE),
+            new ItemStack(Blocks.DARK_OAK_FENCE_GATE),
+            new ItemStack(Blocks.DARK_OAK_STAIRS),
+            new ItemStack(Blocks.WOODEN_SLAB),
+            new ItemStack(Blocks.GLASS_PANE),
             null //So the above can have a comma and we don't have to keep editing extra lines.
         };
 
@@ -237,7 +346,7 @@ public class OreDictionary
         // Search vanilla recipes for recipes to replace
         for(Object obj : recipes)
         {
-            if(obj instanceof ShapedRecipes)
+            if(obj.getClass() == ShapedRecipes.class)
             {
                 ShapedRecipes recipe = (ShapedRecipes)obj;
                 ItemStack output = recipe.getRecipeOutput();
@@ -252,7 +361,7 @@ public class OreDictionary
                     recipesToAdd.add(new ShapedOreRecipe(recipe, replacements));
                 }
             }
-            else if(obj instanceof ShapelessRecipes)
+            else if(obj.getClass() == ShapelessRecipes.class)
             {
                 ShapelessRecipes recipe = (ShapelessRecipes)obj;
                 ItemStack output = recipe.getRecipeOutput();
@@ -261,7 +370,7 @@ public class OreDictionary
                     continue;
                 }
 
-                if(containsMatch(true, (ItemStack[])recipe.recipeItems.toArray(new ItemStack[recipe.recipeItems.size()]), replaceStacks))
+                if(containsMatch(true, recipe.recipeItems.toArray(new ItemStack[recipe.recipeItems.size()]), replaceStacks))
                 {
                     recipesToRemove.add((IRecipe)obj);
                     IRecipe newRecipe = new ShapelessOreRecipe(recipe, replacements);
@@ -274,7 +383,7 @@ public class OreDictionary
         recipes.addAll(recipesToAdd);
         if (recipesToRemove.size() > 0)
         {
-            FMLLog.info("Replaced %d ore recipies", recipesToRemove.size());
+            FMLLog.info("Replaced %d ore recipes", recipesToRemove.size());
         }
     }
 
@@ -312,11 +421,11 @@ public class OreDictionary
     }
 
     /**
-     * Gets all the integer ID for the ores that the specified item stakc is registered to.
+     * Gets all the integer ID for the ores that the specified item stack is registered to.
      * If the item stack is not linked to any ore, this will return an empty array and no new entry will be created.
      *
      * @param stack The item stack of the ore.
-     * @return An array of ids that this ore is registerd as.
+     * @return An array of ids that this ore is registered as.
      */
     public static int[] getOreIDs(ItemStack stack)
     {
@@ -324,7 +433,20 @@ public class OreDictionary
 
         Set<Integer> set = new HashSet<Integer>();
 
-        int id = Item.getIdFromItem(stack.getItem());
+        // HACK: use the registry name's ID. It is unique and it knows about substitutions. Fallback to a -1 value (what Item.getIDForItem would have returned) in the case where the registry is not aware of the item yet
+        // IT should be noted that -1 will fail the gate further down, if an entry already exists with value -1 for this name. This is what is broken and being warned about.
+        // APPARENTLY it's quite common to do this. OreDictionary should be considered alongside Recipes - you can't make them properly until you've registered with the game.
+        ResourceLocation registryName = stack.getItem().delegate.name();
+        int id;
+        if (registryName == null)
+        {
+            FMLLog.log(Level.DEBUG, "Attempted to find the oreIDs for an unregistered object (%s). This won't work very well.", stack);
+            return new int[0];
+        }
+        else
+        {
+            id = GameData.getItemRegistry().getId(registryName);
+        }
         List<Integer> ids = stackToId.get(id);
         if (ids != null) set.addAll(ids);
         ids = stackToId.get(id | ((stack.getItemDamage() + 1) << 16));
@@ -350,6 +472,44 @@ public class OreDictionary
     public static List<ItemStack> getOres(String name)
     {
         return getOres(getOreID(name));
+    }
+
+    /**
+     * Retrieves the List of items that are registered to this ore type at this instant.
+     * If the flag is TRUE, then it will create the list as empty if it did not exist.
+     *
+     * This option should be used by modders who are doing blanket scans in postInit.
+     * It greatly reduces clutter in the OreDictionary is the responsible and proper
+     * way to use the dictionary in a large number of cases.
+     *
+     * The other function above is utilized in OreRecipe and is required for the
+     * operation of that code.
+     *
+     * @param name The ore name, directly calls getOreID if the flag is TRUE
+     * @param alwaysCreateEntry Flag - should a new entry be created if empty
+     * @return An arraylist containing ItemStacks registered for this ore
+     */
+    public static List<ItemStack> getOres(String name, boolean alwaysCreateEntry)
+    {
+        if (alwaysCreateEntry) {
+            return getOres(getOreID(name));
+        }
+        return nameToId.get(name) != null ? getOres(getOreID(name)) : EMPTY_LIST;
+    }
+
+    /**
+     * Returns whether or not an oreName exists in the dictionary.
+     * This function can be used to safely query the Ore Dictionary without
+     * adding needless clutter to the underlying map structure.
+     *
+     * Please use this when possible and appropriate.
+     *
+     * @param name The ore name
+     * @return Whether or not that name is in the Ore Dictionary.
+     */
+    public static boolean doesOreNameExist(String name)
+    {
+        return nameToId.get(name) != null;
     }
 
     /**
@@ -389,7 +549,7 @@ public class OreDictionary
         return false;
     }
 
-    private static boolean containsMatch(boolean strict, List<ItemStack> inputs, ItemStack... targets)
+    public static boolean containsMatch(boolean strict, List<ItemStack> inputs, ItemStack... targets)
     {
         for (ItemStack input : inputs)
         {
@@ -428,9 +588,29 @@ public class OreDictionary
     private static void registerOreImpl(String name, ItemStack ore)
     {
         if ("Unknown".equals(name)) return; //prevent bad IDs.
+        if (ore == null || ore.getItem() == null)
+        {
+            FMLLog.bigWarning("Invalid registration attempt for an Ore Dictionary item with name %s has occurred. The registration has been denied to prevent crashes. The mod responsible for the registration needs to correct this.", name);
+            return; //prevent bad ItemStacks.
+        }
 
         int oreID = getOreID(name);
-        int hash = Item.getIdFromItem(ore.getItem());
+        // HACK: use the registry name's ID. It is unique and it knows about substitutions. Fallback to a -1 value (what Item.getIDForItem would have returned) in the case where the registry is not aware of the item yet
+        // IT should be noted that -1 will fail the gate further down, if an entry already exists with value -1 for this name. This is what is broken and being warned about.
+        // APPARENTLY it's quite common to do this. OreDictionary should be considered alongside Recipes - you can't make them properly until you've registered with the game.
+        ResourceLocation registryName = ore.getItem().delegate.name();
+        int hash;
+        if (registryName == null)
+        {
+            FMLLog.bigWarning("A broken ore dictionary registration with name %s has occurred. It adds an item (type: %s) which is currently unknown to the game registry. This dictionary item can only support a single value when"
+                    + " registered with ores like this, and NO I am not going to turn this spam off. Just register your ore dictionary entries after the GameRegistry.\n"
+                    + "TO USERS: YES this is a BUG in the mod "+Loader.instance().activeModContainer().getName()+" report it to them!", name, ore.getItem().getClass());
+            hash = -1;
+        }
+        else
+        {
+            hash = GameData.getItemRegistry().getId(registryName);
+        }
         if (ore.getItemDamage() != WILDCARD_VALUE)
         {
             hash |= ((ore.getItemDamage() + 1) << 16); // +1 so 0 is significant
@@ -454,13 +634,23 @@ public class OreDictionary
 
     public static class OreRegisterEvent extends Event
     {
-        public final String Name;
-        public final ItemStack Ore;
+        private final String Name;
+        private final ItemStack Ore;
 
         public OreRegisterEvent(String name, ItemStack ore)
         {
             this.Name = name;
             this.Ore = ore;
+        }
+
+        public String getName()
+        {
+            return Name;
+        }
+
+        public ItemStack getOre()
+        {
+            return Ore;
         }
     }
 
@@ -474,7 +664,18 @@ public class OreDictionary
             if (ores == null) continue;
             for (ItemStack ore : ores)
             {
-                int hash = Item.getIdFromItem(ore.getItem());
+                // HACK: use the registry name's ID. It is unique and it knows about substitutions
+                ResourceLocation name = ore.getItem().delegate.name();
+                int hash;
+                if (name == null)
+                {
+                    FMLLog.log(Level.DEBUG, "Defaulting unregistered ore dictionary entry for ore dictionary %s: type %s to -1", getOreName(id), ore.getItem().getClass());
+                    hash = -1;
+                }
+                else
+                {
+                    hash = GameData.getItemRegistry().getId(name);
+                }
                 if (ore.getItemDamage() != WILDCARD_VALUE)
                 {
                     hash |= ((ore.getItemDamage() + 1) << 16); // +1 so meta 0 is significant

@@ -1,35 +1,54 @@
+/*
+ * Minecraft Forge
+ * Copyright (c) 2016.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation version 2.1
+ * of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
 package net.minecraftforge.event.terraingen;
 
 import java.util.Random;
-import net.minecraftforge.fml.common.eventhandler.Event.*;
-import net.minecraft.util.BlockPos;
+
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraft.world.chunk.IChunkProvider;
+import net.minecraft.world.chunk.IChunkGenerator;
 import net.minecraft.world.gen.MapGenBase;
-import net.minecraft.world.gen.NoiseGenerator;
 import net.minecraft.world.gen.feature.WorldGenerator;
-import net.minecraftforge.common.*;
-import net.minecraftforge.event.terraingen.DecorateBiomeEvent.*;
-import net.minecraftforge.event.terraingen.OreGenEvent.*;
-import net.minecraftforge.event.terraingen.PopulateChunkEvent.*;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.terraingen.DecorateBiomeEvent.Decorate;
+import net.minecraftforge.event.terraingen.OreGenEvent.GenerateMinable;
+import net.minecraftforge.event.terraingen.PopulateChunkEvent.Populate;
+import net.minecraftforge.fml.common.eventhandler.Event.Result;
 
 public abstract class TerrainGen
 {
-    public static NoiseGenerator[] getModdedNoiseGenerators(World world, Random rand, NoiseGenerator[] original)
+    public static <T extends InitNoiseGensEvent.Context> T getModdedNoiseGenerators(World world, Random rand, T original)
     {
-        InitNoiseGensEvent event = new InitNoiseGensEvent(world, rand, original);
+        InitNoiseGensEvent<T> event = new InitNoiseGensEvent<T>(world, rand, original);
         MinecraftForge.TERRAIN_GEN_BUS.post(event);
-        return event.newNoiseGens;
+        return event.getNewValues();
     }
 
     public static MapGenBase getModdedMapGen(MapGenBase original, InitMapGenEvent.EventType type)
     {
         InitMapGenEvent event = new InitMapGenEvent(type, original);
         MinecraftForge.TERRAIN_GEN_BUS.post(event);
-        return event.newGen;
+        return event.getNewGen();
     }
 
-    public static boolean populate(IChunkProvider chunkProvider, World world, Random rand, int chunkX, int chunkZ, boolean hasVillageGenerated, Populate.EventType type)
+    public static boolean populate(IChunkGenerator chunkProvider, World world, Random rand, int chunkX, int chunkZ, boolean hasVillageGenerated, Populate.EventType type)
     {
         PopulateChunkEvent.Populate event = new PopulateChunkEvent.Populate(chunkProvider, world, rand, chunkX, chunkZ, hasVillageGenerated, type);
         MinecraftForge.TERRAIN_GEN_BUS.post(event);

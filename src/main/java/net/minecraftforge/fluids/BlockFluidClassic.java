@@ -1,21 +1,38 @@
+/*
+ * Minecraft Forge
+ * Copyright (c) 2016.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation version 2.1
+ * of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
 package net.minecraftforge.fluids;
 
 import java.util.Random;
 
-import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
-import net.minecraft.util.BlockPos;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import net.minecraftforge.event.ForgeEventFactory;
 
 /**
  * This is a fluid block implementation which emulates vanilla Minecraft fluid behavior.
  *
  * It is highly recommended that you use/extend this class for "classic" fluid blocks.
- *
- * @author King Lemming
  *
  */
 public class BlockFluidClassic extends BlockFluidBase
@@ -27,7 +44,7 @@ public class BlockFluidClassic extends BlockFluidBase
     public BlockFluidClassic(Fluid fluid, Material material)
     {
         super(fluid, material);
-        stack = new FluidStack(fluid, FluidContainerRegistry.BUCKET_VOLUME);
+        stack = new FluidStack(fluid, Fluid.BUCKET_VOLUME);
     }
 
     public BlockFluidClassic setFluidStack(FluidStack stack)
@@ -46,7 +63,7 @@ public class BlockFluidClassic extends BlockFluidBase
     public int getQuantaValue(IBlockAccess world, BlockPos pos)
     {
         IBlockState state = world.getBlockState(pos);
-        if (state.getBlock() == Blocks.air)
+        if (state.getBlock() == Blocks.AIR)
         {
             return 0;
         }
@@ -56,14 +73,14 @@ public class BlockFluidClassic extends BlockFluidBase
             return -1;
         }
 
-        int quantaRemaining = quantaPerBlock - ((Integer)state.getValue(LEVEL)).intValue();
+        int quantaRemaining = quantaPerBlock - state.getValue(LEVEL);
         return quantaRemaining;
     }
 
     @Override
     public boolean canCollideCheck(IBlockState state, boolean fullHit)
     {
-        return fullHit && ((Integer)state.getValue(LEVEL)).intValue() == 0;
+        return fullHit && state.getValue(LEVEL) == 0;
     }
 
     @Override
@@ -73,20 +90,31 @@ public class BlockFluidClassic extends BlockFluidBase
     }
 
     @Override
-    public int getLightValue(IBlockAccess world, BlockPos pos)
+    public int getLightValue(IBlockState state, IBlockAccess world, BlockPos pos)
     {
         if (maxScaledLight == 0)
         {
-            return super.getLightValue(world, pos);
+            return super.getLightValue(state, world, pos);
         }
-        int data = quantaPerBlock - ((Integer)world.getBlockState(pos).getValue(LEVEL)).intValue() - 1;
+        int data = quantaPerBlock - state.getValue(LEVEL) - 1;
         return (int) (data / quantaPerBlockFloat * maxScaledLight);
     }
 
     @Override
     public void updateTick(World world, BlockPos pos, IBlockState state, Random rand)
     {
-        int quantaRemaining = quantaPerBlock - ((Integer)state.getValue(LEVEL)).intValue();
+        if (!isSourceBlock(world, pos) && ForgeEventFactory.canCreateFluidSource(world, pos, state, false))
+        {
+            int adjacentSourceBlocks =
+                    (isSourceBlock(world, pos.north()) ? 1 : 0) +
+                    (isSourceBlock(world, pos.south()) ? 1 : 0) +
+                    (isSourceBlock(world, pos.east()) ? 1 : 0) +
+                    (isSourceBlock(world, pos.west()) ? 1 : 0);
+            if (adjacentSourceBlocks >= 2 && (world.getBlockState(pos.up(densityDir)).getMaterial().isSolid() || isSourceBlock(world, pos.up(densityDir))))
+                world.setBlockState(pos, state.withProperty(LEVEL, 0));
+        }
+
+        int quantaRemaining = quantaPerBlock - state.getValue(LEVEL);
         int expQuanta = -101;
 
         // check adjacent block levels if non-source
@@ -171,7 +199,8 @@ public class BlockFluidClassic extends BlockFluidBase
 
     public boolean isSourceBlock(IBlockAccess world, BlockPos pos)
     {
-        return world.getBlockState(pos) == this && ((Integer)world.getBlockState(pos).getValue(LEVEL)).intValue() == 0;
+        IBlockState state = world.getBlockState(pos);
+        return state.getBlock() == this && state.getValue(LEVEL) == 0;
     }
 
     protected boolean[] getOptimalFlowDirections(World world, BlockPos pos)
@@ -280,22 +309,22 @@ public class BlockFluidClassic extends BlockFluidBase
     {
         if (world.isAirBlock(pos)) return true;
 
-        Block block = world.getBlockState(pos).getBlock();
-        if (block == this)
+        IBlockState state = world.getBlockState(pos);
+        if (state.getBlock() == this)
         {
             return true;
         }
 
-        if (displacements.containsKey(block))
+        if (displacements.containsKey(state.getBlock()))
         {
-            return displacements.get(block);
+            return displacements.get(state.getBlock());
         }
 
-        Material material = block.getMaterial();
+        Material material = state.getMaterial();
         if (material.blocksMovement()  ||
-            material == Material.water ||
-            material == Material.lava  ||
-            material == Material.portal)
+            material == Material.WATER ||
+            material == Material.LAVA  ||
+            material == Material.PORTAL)
         {
             return false;
         }
@@ -312,7 +341,7 @@ public class BlockFluidClassic extends BlockFluidBase
         }
         else
         {
-        	return false;
+            return false;
         }
     }
 

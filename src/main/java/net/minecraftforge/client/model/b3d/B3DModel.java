@@ -1,3 +1,22 @@
+/*
+ * Minecraft Forge
+ * Copyright (c) 2016.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation version 2.1
+ * of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
 package net.minecraftforge.client.model.b3d;
 
 import java.io.FileInputStream;
@@ -17,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.vecmath.Matrix3f;
 import javax.vecmath.Matrix4f;
 import javax.vecmath.Quat4f;
 import javax.vecmath.Vector2f;
@@ -30,6 +50,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Function;
+import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableList;
@@ -42,6 +63,7 @@ import com.google.common.collect.Table;
 public class B3DModel
 {
     static final Logger logger = LogManager.getLogger(B3DModel.class);
+    private static final boolean printLoadedModels = "true".equals(System.getProperty("b3dloader.printLoadedModels"));
     private final List<Texture> textures;
     private final List<Brush> brushes;
     private final Node<?> root;
@@ -57,7 +79,7 @@ public class B3DModel
 
     public static class Parser
     {
-        private static final int version = 0001;
+        private static final int version = 1;
         private final ByteBuffer buf;
 
         private byte[] tag = new byte[4];
@@ -87,13 +109,27 @@ public class B3DModel
             }
         }
 
+        private String dump = "";
+        private void dump(String str)
+        {
+            if(printLoadedModels)
+            {
+                dump += str + "\n";
+            }
+        }
+
         private B3DModel res;
 
         public B3DModel parse() throws IOException
         {
             if(res != null) return res;
+            dump = "\n";
             readHeader();
             res = bb3d();
+            if(printLoadedModels)
+            {
+                logger.info(dump);
+            }
             return res;
         }
 
@@ -184,13 +220,14 @@ public class B3DModel
         {
             chunk("BB3D");
             int version = buf.getInt();
-            if(version / 100 > this.version / 100)
+            if(version / 100 > Parser.version / 100)
                 throw new IOException("Unsupported major model version: " + ((float)version / 100));
-            if(version % 100 > this.version % 100)
-                logger.warn(String.format("Minor version differnce in model: ", ((float)version / 100)));
-            List<Texture> textures = Collections.EMPTY_LIST;
-            List<Brush> brushes = Collections.EMPTY_LIST;
+            if(version % 100 > Parser.version % 100)
+                logger.warn(String.format("Minor version difference in model: ", ((float)version / 100)));
+            List<Texture> textures = Collections.emptyList();
+            List<Brush> brushes = Collections.emptyList();
             Node<?> root = null;
+            dump("BB3D(version = " + version + ") {");
             while(buf.hasRemaining())
             {
                 readHeader();
@@ -199,6 +236,7 @@ public class B3DModel
                 else if(isChunk("NODE")) root = node();
                 else skip();
             }
+            dump("}");
             popLimit();
             return new B3DModel(textures, brushes, root, meshes.build());
         }
@@ -217,6 +255,7 @@ public class B3DModel
                 float rot = buf.getFloat();
                 ret.add(new Texture(path, flags, blend, pos, scale, rot));
             }
+            dump("TEXS([" + Joiner.on(", ").join(ret) + "])");
             popLimit();
             this.textures.addAll(ret);
             return ret;
@@ -238,6 +277,7 @@ public class B3DModel
                 for(int i = 0; i < n_texs; i++) textures.add(getTexture(buf.getInt()));
                 ret.add(new Brush(name, color, shininess, blend, fx, textures));
             }
+            dump("BRUS([" + Joiner.on(", ").join(ret) + "])");
             popLimit();
             this.brushes.addAll(ret);
             return ret;
@@ -286,6 +326,7 @@ public class B3DModel
                 }
                 ret.add(new Vertex(v, n, color, tex_coords));
             }
+            dump("VRTS([" + Joiner.on(", ").join(ret) + "])");
             popLimit();
             this.vertices.clear();
             this.vertices.addAll(ret);
@@ -301,6 +342,7 @@ public class B3DModel
             {
                 ret.add(new Face(getVertex(buf.getInt()), getVertex(buf.getInt()), getVertex(buf.getInt()), getBrush(brush_id)));
             }
+            dump("TRIS([" + Joiner.on(", ").join(ret) + "])");
             popLimit();
             return ret;
         }
@@ -310,6 +352,7 @@ public class B3DModel
             chunk("MESH");
             int brush_id = buf.getInt();
             readHeader();
+            dump("MESH(brush = " + brush_id + ") {");
             vrts();
             List<Face> ret = new ArrayList<Face>();
             while(buf.hasRemaining())
@@ -317,6 +360,7 @@ public class B3DModel
                 readHeader();
                 ret.addAll(tris());
             }
+            dump("}");
             popLimit();
             return Pair.of(getBrush(brush_id), ret);
         }
@@ -329,6 +373,7 @@ public class B3DModel
             {
                 ret.add(Pair.of(getVertex(buf.getInt()), buf.getFloat()));
             }
+            dump("BONE(...)");
             popLimit();
             return ret;
         }
@@ -380,6 +425,7 @@ public class B3DModel
                 animations.peek().put(frame, Optional.<Node<?>>absent(), key);
                 ret.put(frame, key);
             }
+            dump("KEYS([(" + Joiner.on("), (").withKeyValueSeparator(" -> ").join(ret) + ")])");
             popLimit();
             return ret;
         }
@@ -390,6 +436,7 @@ public class B3DModel
             int flags = buf.getInt();
             int frames = buf.getInt();
             float fps = buf.getFloat();
+            dump("ANIM(" + flags + ", " + frames + ", " + fps + ")");
             popLimit();
             return Triple.of(flags, frames, fps);
         }
@@ -399,7 +446,6 @@ public class B3DModel
             chunk("NODE");
             animations.push(HashBasedTable.<Integer, Optional<Node<?>>, Key>create());
             Triple<Integer, Integer, Float> animData = null;
-            Animation animation = null;
             Pair<Brush, List<Face>> mesh = null;
             List<Pair<Vertex, Float>> bone = null;
             Map<Integer, Key> keys = new HashMap<Integer, Key>();
@@ -408,6 +454,7 @@ public class B3DModel
             Vector3f pos = new Vector3f(buf.getFloat(), buf.getFloat(), buf.getFloat());
             Vector3f scale = new Vector3f(buf.getFloat(), buf.getFloat(), buf.getFloat());
             Quat4f rot = readQuat();
+            dump("NODE(" + name + ", " + pos + ", " + scale + ", " + rot + ") {");
             while(buf.hasRemaining())
             {
                 readHeader();
@@ -418,6 +465,7 @@ public class B3DModel
                 else if(isChunk("ANIM")) animData = anim();
                 else skip();
             }
+            dump("}");
             popLimit();
             Table<Integer, Optional<Node<?>>, Key> keyData = animations.pop();
             Node<?> node;
@@ -482,7 +530,7 @@ public class B3DModel
 
     public static class Texture
     {
-        public static Texture White = new Texture("builtin/white", 0, 0, new Vector2f(0, 0), new Vector2f(1, 1), 0);
+        public static final Texture White = new Texture("builtin/white", 0, 0, new Vector2f(0, 0), new Vector2f(1, 1), 0);
         private final String path;
         private final int flags;
         private final int blend;
@@ -625,7 +673,8 @@ public class B3DModel
                     bm.mul(bone.getLeft());
                     t.add(bm);
                 }
-                if(totalWeight != 0) t.mul(1f / totalWeight);
+                if(Math.abs(totalWeight) > 1e-4) t.mul(1f / totalWeight);
+                else t.setIdentity();
             }
 
             // pos
@@ -635,13 +684,19 @@ public class B3DModel
             Vector3f rPos = new Vector3f(newPos.x / newPos.w, newPos.y / newPos.w, newPos.z / newPos.w);
 
             // normal
-            t.invert();
-            t.transpose();
-            Vector4f normal = new Vector4f(this.normal), newNormal = new Vector4f();
-            normal.w = 1;
-            t.transform(normal, newNormal);
-            Vector3f rNormal = new Vector3f(newNormal.x / newNormal.w, newNormal.y / newNormal.w, newNormal.z / newNormal.w);
-            rNormal.normalize();
+            Vector3f rNormal = null;
+
+            if(this.normal != null)
+            {
+                Matrix3f tm = new Matrix3f();
+                t.getRotationScale(tm);
+                tm.invert();
+                tm.transpose();
+                Vector3f normal = new Vector3f(this.normal);
+                rNormal = new Vector3f();
+                tm.transform(normal, rNormal);
+                rNormal.normalize();
+            }
 
             // texCoords TODO
             return new Vertex(rPos, rNormal, color, texCoords);
@@ -958,6 +1013,7 @@ public class B3DModel
         private Node<Mesh> parent;
         private final Brush brush;
         private final ImmutableList<Face> faces;
+        //private final ImmutableList<Bone> bones;
 
         private Set<Node<Bone>> bones = new HashSet<Node<Bone>>();
 

@@ -1,18 +1,39 @@
+/*
+ * Minecraft Forge
+ * Copyright (c) 2016.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation version 2.1
+ * of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
 package net.minecraftforge.fluids;
 
+import javax.annotation.Nullable;
 import java.util.Locale;
-import java.util.Map;
-
-import com.google.common.collect.Maps;
-
 import net.minecraft.block.Block;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.util.BlockPos;
-import net.minecraft.util.StatCollector;
+import net.minecraft.block.material.Material;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.SoundEvents;
+import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.SoundEvent;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.translation.I18n;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
-import net.minecraftforge.common.ForgeModContainer;
+import net.minecraft.world.WorldProvider;
 import net.minecraftforge.fml.common.FMLLog;
-import net.minecraftforge.fml.common.LoaderException;
 import net.minecraft.item.EnumRarity;
 
 /**
@@ -30,20 +51,22 @@ import net.minecraft.item.EnumRarity;
  * The default values can be used as a reference point for mods adding fluids such as oil or heavy
  * water.
  *
- * @author King Lemming
- *
  */
 public class Fluid
 {
+    public static final int BUCKET_VOLUME = 1000;
+
     /** The unique identification name for this fluid. */
     protected final String fluidName;
 
     /** The unlocalized name of this fluid. */
     protected String unlocalizedName;
 
-    /** The Icons for this fluid. */
-    protected TextureAtlasSprite stillIcon;
-    protected TextureAtlasSprite flowingIcon;
+    protected final ResourceLocation still;
+    protected final ResourceLocation flowing;
+
+    private SoundEvent fillSound;
+    private SoundEvent emptySound;
 
     /**
      * The light level emitted by this fluid.
@@ -103,10 +126,12 @@ public class Fluid
      */
     protected Block block = null;
 
-    public Fluid(String fluidName)
+    public Fluid(String fluidName, ResourceLocation still, ResourceLocation flowing)
     {
         this.fluidName = fluidName.toLowerCase(Locale.ENGLISH);
         this.unlocalizedName = fluidName;
+        this.still = still;
+        this.flowing = flowing;
     }
 
     public Fluid setUnlocalizedName(String unlocalizedName)
@@ -165,14 +190,21 @@ public class Fluid
         return this;
     }
 
+    public Fluid setFillSound(SoundEvent fillSound)
+    {
+        this.fillSound = fillSound;
+        return this;
+    }
+
+    public Fluid setEmptySound(SoundEvent emptySound)
+    {
+        this.emptySound = emptySound;
+        return this;
+    }
+
     public final String getName()
     {
         return this.fluidName;
-    }
-
-    public final int getID()
-    {
-        return FluidRegistry.getFluidID(this.fluidName);
     }
 
     public final Block getBlock()
@@ -185,22 +217,49 @@ public class Fluid
         return block != null;
     }
 
+	/**
+     * Determines if this fluid should vaporize in dimensions where water vaporizes when placed.
+     * To preserve the intentions of vanilla, fluids that can turn lava into obsidian should vaporize.
+     * This prevents players from making the nether safe with a single bucket.
+     * Based on {@link net.minecraft.item.ItemBucket#tryPlaceContainedLiquid(EntityPlayer, World, BlockPos)}
+     *
+     * @param fluidStack The fluidStack is trying to be placed.
+     * @return true if this fluid should vaporize in dimensions where water vaporizes when placed.
+     */
+    public boolean doesVaporize(FluidStack fluidStack)
+    {
+        if (block == null)
+            return false;
+        return block.getDefaultState().getMaterial() == Material.WATER;
+    }
+
+	/**
+     * Called instead of placing the fluid block if {@link WorldProvider#doesWaterVaporize()} and {@link #doesVaporize(FluidStack)} are true.
+     * Override this to make your explosive liquid blow up instead of the default smoke, etc.
+     * Based on {@link net.minecraft.item.ItemBucket#tryPlaceContainedLiquid(EntityPlayer, World, BlockPos)}
+     *
+     * @param player     Player who tried to place the fluid. May be null for blocks like dispensers.
+     * @param worldIn    World to vaporize the fluid in.
+     * @param pos        The position in the world the fluid block was going to be placed.
+     * @param fluidStack The fluidStack that was going to be placed.
+     */
+    public void vaporize(@Nullable EntityPlayer player, World worldIn, BlockPos pos, FluidStack fluidStack)
+    {
+        worldIn.playSound(player, pos, SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, 0.5F, 2.6F + (worldIn.rand.nextFloat() - worldIn.rand.nextFloat()) * 0.8F);
+
+        for (int l = 0; l < 8; ++l)
+        {
+            worldIn.spawnParticle(EnumParticleTypes.SMOKE_LARGE, (double) pos.getX() + Math.random(), (double) pos.getY() + Math.random(), (double) pos.getZ() + Math.random(), 0.0D, 0.0D, 0.0D);
+        }
+    }
+
     /**
      * Returns the localized name of this fluid.
      */
     public String getLocalizedName(FluidStack stack)
     {
-        return getLocalizedName();
-    }
-
-    /**
-     * Use the FluidStack sensitive version above
-     */
-     @Deprecated
-    public String getLocalizedName()
-    {
         String s = this.getUnlocalizedName();
-        return s == null ? "" : StatCollector.translateToLocal(s);
+        return s == null ? "" : I18n.translateToLocal(s);
     }
 
     /**
@@ -217,14 +276,6 @@ public class Fluid
     public String getUnlocalizedName()
     {
         return "fluid." + this.unlocalizedName;
-    }
-
-    /**
-     * Returns 0 for "/terrain.png". ALL FLUID TEXTURES MUST BE ON THIS SHEET.
-     */
-    public final int getSpriteNumber()
-    {
-        return 0;
     }
 
     /* Default Accessors */
@@ -260,42 +311,51 @@ public class Fluid
 
     public int getColor()
     {
-        return 0xFFFFFF;
+        return 0xFFFFFFFF;
     }
 
-
-    public final Fluid setStillIcon(TextureAtlasSprite stillIcon)
+    public ResourceLocation getStill()
     {
-        this.stillIcon = stillIcon;
-        return this;
+        return still;
     }
 
-    public final Fluid setFlowingIcon(TextureAtlasSprite flowingIcon)
+    public ResourceLocation getFlowing()
     {
-        this.flowingIcon = flowingIcon;
-        return this;
+        return flowing;
     }
 
-    public final Fluid setIcons(TextureAtlasSprite stillIcon, TextureAtlasSprite flowingIcon)
+    public SoundEvent getFillSound()
     {
-        return this.setStillIcon(stillIcon).setFlowingIcon(flowingIcon);
+        if(fillSound == null)
+        {
+            if(getBlock() != null && getBlock().getDefaultState().getMaterial() == Material.LAVA)
+            {
+                fillSound = SoundEvents.ITEM_BUCKET_FILL_LAVA;
+            }
+            else
+            {
+                fillSound = SoundEvents.ITEM_BUCKET_FILL;
+            }
+        }
+
+        return fillSound;
     }
 
-    public final Fluid setIcons(TextureAtlasSprite commonIcon)
+    public SoundEvent getEmptySound()
     {
-        return this.setStillIcon(commonIcon).setFlowingIcon(commonIcon);
-    }
+        if(emptySound == null)
+        {
+            if(getBlock() != null && getBlock().getDefaultState().getMaterial() == Material.LAVA)
+            {
+                emptySound = SoundEvents.ITEM_BUCKET_EMPTY_LAVA;
+            }
+            else
+            {
+                emptySound = SoundEvents.ITEM_BUCKET_EMPTY;
+            }
+        }
 
-    public TextureAtlasSprite getIcon(){ return getStillIcon(); }
-
-    public TextureAtlasSprite getStillIcon()
-    {
-        return this.stillIcon;
-    }
-
-    public TextureAtlasSprite getFlowingIcon()
-    {
-        return this.flowingIcon;
+        return emptySound;
     }
 
     /* Stack-based Accessors */
@@ -306,7 +366,11 @@ public class Fluid
     public boolean isGaseous(FluidStack stack){ return isGaseous(); }
     public EnumRarity getRarity(FluidStack stack){ return getRarity(); }
     public int getColor(FluidStack stack){ return getColor(); }
-    public TextureAtlasSprite getIcon(FluidStack stack){ return getIcon(); }
+    public ResourceLocation getStill(FluidStack stack) { return getStill(); }
+    public ResourceLocation getFlowing(FluidStack stack) { return getFlowing(); }
+    public SoundEvent getFillSound(FluidStack stack) { return getFillSound(); }
+    public SoundEvent getEmptySound(FluidStack stack) { return getEmptySound(); }
+
     /* World-based Accessors */
     public int getLuminosity(World world, BlockPos pos){ return getLuminosity(); }
     public int getDensity(World world, BlockPos pos){ return getDensity(); }
@@ -315,6 +379,9 @@ public class Fluid
     public boolean isGaseous(World world, BlockPos pos){ return isGaseous(); }
     public EnumRarity getRarity(World world, BlockPos pos){ return getRarity(); }
     public int getColor(World world, BlockPos pos){ return getColor(); }
-    public TextureAtlasSprite getIcon(World world, BlockPos pos){ return getIcon(); }
+    public ResourceLocation getStill(World world, BlockPos pos) { return getStill(); }
+    public ResourceLocation getFlowing(World world, BlockPos pos) { return getFlowing(); }
+    public SoundEvent getFillSound(World world, BlockPos pos) { return getFillSound(); }
+    public SoundEvent getEmptySound(World world, BlockPos pos) { return getEmptySound(); }
 
 }

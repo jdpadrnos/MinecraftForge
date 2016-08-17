@@ -1,96 +1,110 @@
+/*
+ * Minecraft Forge
+ * Copyright (c) 2016.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation version 2.1
+ * of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
 package net.minecraftforge.common;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 
 import com.google.common.collect.ImmutableList;
 
+import net.minecraft.init.Biomes;
 import net.minecraft.util.WeightedRandom;
-import net.minecraft.world.WorldType;
-import net.minecraft.world.biome.BiomeGenBase;
+import net.minecraft.world.biome.Biome;
+import net.minecraft.world.biome.BiomeProvider;
 import net.minecraft.world.gen.structure.MapGenVillage;
-import net.minecraft.world.biome.WorldChunkManager;
-import net.minecraftforge.common.BiomeDictionary.Type;
 import net.minecraftforge.common.util.EnumHelper;
 
 public class BiomeManager
 {
     private static TrackedList<BiomeEntry>[] biomes = setupBiomes();
 
-    private static boolean isModded = false;
+    public static List<Biome> oceanBiomes = new ArrayList<Biome>();
 
-    public static List<BiomeGenBase> oceanBiomes = new ArrayList<BiomeGenBase>();
-
-    public static ArrayList<BiomeGenBase> strongHoldBiomes = new ArrayList<BiomeGenBase>();
-    public static ArrayList<BiomeGenBase> strongHoldBiomesBlackList = new ArrayList<BiomeGenBase>();
+    public static ArrayList<Biome> strongHoldBiomes = new ArrayList<Biome>();
+    public static ArrayList<Biome> strongHoldBiomesBlackList = new ArrayList<Biome>();
 
     static
     {
-        oceanBiomes.add(BiomeGenBase.ocean);
-        oceanBiomes.add(BiomeGenBase.deepOcean);
-        oceanBiomes.add(BiomeGenBase.frozenOcean);
+        oceanBiomes.add(Biomes.OCEAN);
+        oceanBiomes.add(Biomes.DEEP_OCEAN);
+        oceanBiomes.add(Biomes.FROZEN_OCEAN);
     }
 
     private static TrackedList<BiomeEntry>[] setupBiomes()
     {
+        @SuppressWarnings("unchecked")
         TrackedList<BiomeEntry>[] currentBiomes = new TrackedList[BiomeType.values().length];
-        List list = new ArrayList();
+        List<BiomeEntry> list = new ArrayList<BiomeEntry>();
 
-        list.add(new BiomeEntry(BiomeGenBase.forest, 10));
-        list.add(new BiomeEntry(BiomeGenBase.roofedForest, 10));
-        list.add(new BiomeEntry(BiomeGenBase.extremeHills, 10));
-        list.add(new BiomeEntry(BiomeGenBase.plains, 10));
-        list.add(new BiomeEntry(BiomeGenBase.birchForest, 10));
-        list.add(new BiomeEntry(BiomeGenBase.swampland, 10));
+        list.add(new BiomeEntry(Biomes.FOREST, 10));
+        list.add(new BiomeEntry(Biomes.ROOFED_FOREST, 10));
+        list.add(new BiomeEntry(Biomes.EXTREME_HILLS, 10));
+        list.add(new BiomeEntry(Biomes.PLAINS, 10));
+        list.add(new BiomeEntry(Biomes.BIRCH_FOREST, 10));
+        list.add(new BiomeEntry(Biomes.SWAMPLAND, 10));
 
-        currentBiomes[BiomeType.WARM.ordinal()] = new TrackedList(list);
+        currentBiomes[BiomeType.WARM.ordinal()] = new TrackedList<BiomeEntry>(list);
         list.clear();
 
-        list.add(new BiomeEntry(BiomeGenBase.forest, 10));
-        list.add(new BiomeEntry(BiomeGenBase.extremeHills, 10));
-        list.add(new BiomeEntry(BiomeGenBase.taiga, 10));
-        list.add(new BiomeEntry(BiomeGenBase.plains, 10));
+        list.add(new BiomeEntry(Biomes.FOREST, 10));
+        list.add(new BiomeEntry(Biomes.EXTREME_HILLS, 10));
+        list.add(new BiomeEntry(Biomes.TAIGA, 10));
+        list.add(new BiomeEntry(Biomes.PLAINS, 10));
 
-        currentBiomes[BiomeType.COOL.ordinal()] = new TrackedList(list);
+        currentBiomes[BiomeType.COOL.ordinal()] = new TrackedList<BiomeEntry>(list);
         list.clear();
 
-        list.add(new BiomeEntry(BiomeGenBase.icePlains, 30));
-        list.add(new BiomeEntry(BiomeGenBase.coldTaiga, 10));
+        list.add(new BiomeEntry(Biomes.ICE_PLAINS, 30));
+        list.add(new BiomeEntry(Biomes.COLD_TAIGA, 10));
 
-        currentBiomes[BiomeType.ICY.ordinal()] = new TrackedList(list);
+        currentBiomes[BiomeType.ICY.ordinal()] = new TrackedList<BiomeEntry>(list);
         list.clear();
 
-        currentBiomes[BiomeType.DESERT.ordinal()] = new TrackedList(list);
+        currentBiomes[BiomeType.DESERT.ordinal()] = new TrackedList<BiomeEntry>(list);
 
         return currentBiomes;
     }
 
-    @SuppressWarnings("unchecked")
-    public static void addVillageBiome(BiomeGenBase biome, boolean canSpawn)
+    public static void addVillageBiome(Biome biome, boolean canSpawn)
     {
-        if (!MapGenVillage.villageSpawnBiomes.contains(biome))
+        if (!MapGenVillage.VILLAGE_SPAWN_BIOMES.contains(biome))
         {
-            ArrayList<BiomeGenBase> biomes = new ArrayList<BiomeGenBase>(MapGenVillage.villageSpawnBiomes);
+            ArrayList<Biome> biomes = new ArrayList<Biome>(MapGenVillage.VILLAGE_SPAWN_BIOMES);
             biomes.add(biome);
-            MapGenVillage.villageSpawnBiomes = biomes;
+            MapGenVillage.VILLAGE_SPAWN_BIOMES = biomes;
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public static void removeVillageBiome(BiomeGenBase biome)
+    public static void removeVillageBiome(Biome biome)
     {
-        if (MapGenVillage.villageSpawnBiomes.contains(biome))
+        if (MapGenVillage.VILLAGE_SPAWN_BIOMES.contains(biome))
         {
-            ArrayList<BiomeGenBase> biomes = new ArrayList<BiomeGenBase>(MapGenVillage.villageSpawnBiomes);
+            ArrayList<Biome> biomes = new ArrayList<Biome>(MapGenVillage.VILLAGE_SPAWN_BIOMES);
             biomes.remove(biome);
-            MapGenVillage.villageSpawnBiomes = biomes;
+            MapGenVillage.VILLAGE_SPAWN_BIOMES = biomes;
         }
     }
 
-    public static void addStrongholdBiome(BiomeGenBase biome)
+    public static void addStrongholdBiome(Biome biome)
     {
         if (!strongHoldBiomes.contains(biome))
         {
@@ -98,7 +112,7 @@ public class BiomeManager
         }
     }
 
-    public static void removeStrongholdBiome(BiomeGenBase biome)
+    public static void removeStrongholdBiome(Biome biome)
     {
         if (!strongHoldBiomesBlackList.contains(biome))
         {
@@ -106,26 +120,24 @@ public class BiomeManager
         }
     }
 
-    public static void addSpawnBiome(BiomeGenBase biome)
+    public static void addSpawnBiome(Biome biome)
     {
-        if (!WorldChunkManager.allowedBiomes.contains(biome))
+        if (!BiomeProvider.allowedBiomes.contains(biome))
         {
-            WorldChunkManager.allowedBiomes.add(biome);
+            BiomeProvider.allowedBiomes.add(biome);
         }
     }
 
-    public static void removeSpawnBiome(BiomeGenBase biome)
+    public static void removeSpawnBiome(Biome biome)
     {
-        if (WorldChunkManager.allowedBiomes.contains(biome))
+        if (BiomeProvider.allowedBiomes.contains(biome))
         {
-            WorldChunkManager.allowedBiomes.remove(biome);
+            BiomeProvider.allowedBiomes.remove(biome);
         }
     }
 
     public static void addBiome(BiomeType type, BiomeEntry entry)
     {
-        isModded = true;
-
         int idx = type.ordinal();
         List<BiomeEntry> list = idx > biomes.length ? null : biomes[idx];
         if (list != null) list.add(entry);
@@ -133,8 +145,6 @@ public class BiomeManager
 
     public static void removeBiome(BiomeType type, BiomeEntry entry)
     {
-        isModded = true;
-
         int idx = type.ordinal();
         List<BiomeEntry> list = idx > biomes.length ? null : biomes[idx];
 
@@ -147,7 +157,7 @@ public class BiomeManager
     public static ImmutableList<BiomeEntry> getBiomes(BiomeType type)
     {
         int idx = type.ordinal();
-        List<BiomeEntry> list = idx > biomes.length ? null : biomes[idx];
+        List<BiomeEntry> list = idx >= biomes.length ? null : biomes[idx];
 
         return list != null ? ImmutableList.copyOf(list) : null;
     }
@@ -175,11 +185,11 @@ public class BiomeManager
                 if (t.name().equals(name)) return t;
             }
 
-            BiomeType ret = EnumHelper.addEnum(BiomeType.class, name, BiomeType.class);
+            BiomeType ret = EnumHelper.addEnum(BiomeType.class, name, new Class[0], new Object[0]);
 
             if (ret.ordinal() >= biomes.length)
             {
-                biomes = Arrays.copyOf(biomes, ret.ordinal());
+                biomes = Arrays.copyOf(biomes, ret.ordinal() + 1);
             }
 
             return ret;
@@ -188,9 +198,9 @@ public class BiomeManager
 
     public static class BiomeEntry extends WeightedRandom.Item
     {
-        public final BiomeGenBase biome;
+        public final Biome biome;
 
-        public BiomeEntry(BiomeGenBase biome, int weight)
+        public BiomeEntry(Biome biome, int weight)
         {
             super(weight);
 
@@ -200,6 +210,7 @@ public class BiomeManager
 
     private static class TrackedList<E> extends ArrayList<E>
     {
+        private static final long serialVersionUID = 1L;
         private boolean isModded = false;
 
         public TrackedList(Collection<? extends E> c)

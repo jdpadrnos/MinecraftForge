@@ -1,26 +1,20 @@
 --- ../src-base/minecraft/net/minecraft/init/Bootstrap.java
 +++ ../src-work/minecraft/net/minecraft/init/Bootstrap.java
-@@ -67,6 +67,7 @@
-         return field_151355_a;
-     }
- 
-+    @SuppressWarnings("unused")
-     static void func_151353_a()
-     {
-         BlockDispenser.field_149943_a.func_82595_a(Items.field_151032_g, new BehaviorProjectileDispense()
-@@ -509,6 +510,7 @@
-                 }
-             }
-         });
-+        if (false){ //Forge: Removed, Fixes  MC-75630 - Exploit with signs and command blocks
-         BlockDispenser.field_149943_a.func_82595_a(Item.func_150898_a(Blocks.field_150483_bI), new BehaviorDefaultDispenseItem()
+@@ -264,6 +264,9 @@
+         };
+         BlockDispenser.field_149943_a.func_82595_a(Items.field_151129_at, ibehaviordispenseitem);
+         BlockDispenser.field_149943_a.func_82595_a(Items.field_151131_as, ibehaviordispenseitem);
++        BlockDispenser.field_149943_a.func_82595_a(Items.field_151117_aB, net.minecraftforge.fluids.DispenseFluidContainer.getInstance());
++        BlockDispenser.field_149943_a.func_82595_a(Items.field_151133_ar, net.minecraftforge.fluids.DispenseFluidContainer.getInstance());
++        if (false)
+         BlockDispenser.field_149943_a.func_82595_a(Items.field_151133_ar, new BehaviorDefaultDispenseItem()
          {
-             private static final String __OBFID = "CL_00002276";
-@@ -535,6 +537,7 @@
-             protected void func_82485_a(IBlockSource p_82485_1_) {}
-             protected void func_82489_a(IBlockSource p_82489_1_, EnumFacing p_82489_2_) {}
-         });
-+        }
+             private final BehaviorDefaultDispenseItem field_150840_b = new BehaviorDefaultDispenseItem();
+@@ -541,6 +544,7 @@
+             StatList.func_151178_a();
+             Biome.func_185358_q();
+             func_151353_a();
++            net.minecraftforge.fml.common.registry.GameData.vanillaSnapshot();
+         }
      }
  
-     public static void func_151354_b()

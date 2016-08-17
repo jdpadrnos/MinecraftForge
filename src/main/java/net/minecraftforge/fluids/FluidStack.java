@@ -1,4 +1,23 @@
 
+/*
+ * Minecraft Forge
+ * Copyright (c) 2016.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation version 2.1
+ * of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
 package net.minecraftforge.fluids;
 
 import net.minecraft.item.ItemStack;
@@ -13,17 +32,9 @@ import net.minecraftforge.fml.common.registry.RegistryDelegate;
  * {@link #isFluidStackIdentical(FluidStack)} to determine if FluidID, Amount and NBT Tag are all
  * equal.
  *
- * @author King Lemming, SirSengir (LiquidStack)
- *
  */
 public class FluidStack
 {
-    /**
-     * This field will be removed in 1.8. It may be incorrect after a world is loaded. Code should always
-     * use {@link #getFluid()} instead. That will always reflect the correct value.
-     */
-    @Deprecated
-    public final Fluid fluid;
     public int amount;
     public NBTTagCompound tag;
     private RegistryDelegate<Fluid> fluidDelegate;
@@ -40,9 +51,8 @@ public class FluidStack
             FMLLog.bigWarning("Failed attempt to create a FluidStack for an unregistered Fluid %s (type %s)", fluid.getName(), fluid.getClass().getName());
             throw new IllegalArgumentException("Cannot create a fluidstack from an unregistered fluid");
         }
-    	this.fluidDelegate = FluidRegistry.makeDelegate(fluid);
+        this.fluidDelegate = FluidRegistry.makeDelegate(fluid);
         this.amount = amount;
-        this.fluid = fluid;
     }
 
     public FluidStack(Fluid fluid, int amount, NBTTagCompound nbt)
@@ -58,20 +68,6 @@ public class FluidStack
     public FluidStack(FluidStack stack, int amount)
     {
         this(stack.getFluid(), amount, stack.tag);
-    }
-
-    // To be removed in 1.8
-    @Deprecated
-    public FluidStack(int fluidID, int amount)
-    {
-    	this(FluidRegistry.getFluid(fluidID), amount);
-    }
-
-    // To be removed in 1.8
-    @Deprecated
-    public FluidStack(int fluidID, int amount, NBTTagCompound nbt)
-    {
-    	this(FluidRegistry.getFluid(fluidID), amount, nbt);
     }
 
     /**
@@ -114,11 +110,6 @@ public class FluidStack
     public final Fluid getFluid()
     {
         return fluidDelegate.get();
-    }
-
-    public final int getFluidID()
-    {
-    	return FluidRegistry.getFluidID(getFluid());
     }
 
     public String getLocalizedName()
@@ -202,23 +193,18 @@ public class FluidStack
             return false;
         }
 
-        if (other.getItem() instanceof IFluidContainerItem)
-        {
-            return isFluidEqual(((IFluidContainerItem) other.getItem()).getFluid(other));
-        }
-
-        return isFluidEqual(FluidContainerRegistry.getFluidForFilledItem(other));
+        return isFluidEqual(FluidUtil.getFluidContained(other));
     }
 
     @Override
     public final int hashCode()
     {
-    	int code = 1;
-    	code = 31*code + getFluid().hashCode();
-    	code = 31*code + amount;
-    	if (tag != null)
-    		code = 31*code + tag.hashCode();
-    	return code;
+        int code = 1;
+        code = 31*code + getFluid().hashCode();
+        code = 31*code + amount;
+        if (tag != null)
+            code = 31*code + tag.hashCode();
+        return code;
     }
 
     /**

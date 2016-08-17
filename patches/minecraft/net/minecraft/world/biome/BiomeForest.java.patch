@@ -1,0 +1,48 @@
+--- ../src-base/minecraft/net/minecraft/world/biome/BiomeForest.java
++++ ../src-work/minecraft/net/minecraft/world/biome/BiomeForest.java
+@@ -69,11 +69,14 @@
+ 
+     public void func_180624_a(World p_180624_1_, Random p_180624_2_, BlockPos p_180624_3_)
+     {
++        if(net.minecraftforge.event.terraingen.TerrainGen.decorate(p_180624_1_, p_180624_2_, p_180624_3_, net.minecraftforge.event.terraingen.DecorateBiomeEvent.Decorate.EventType.SHROOM))
+         if (this.field_150632_aF == BiomeForest.Type.ROOFED)
+         {
+             this.func_185379_b(p_180624_1_, p_180624_2_, p_180624_3_);
+         }
+ 
++        if(net.minecraftforge.event.terraingen.TerrainGen.decorate(p_180624_1_, p_180624_2_, p_180624_3_, net.minecraftforge.event.terraingen.DecorateBiomeEvent.Decorate.EventType.FLOWERS))
++        { // no tab for patch
+         int i = p_180624_2_.nextInt(5) - 3;
+ 
+         if (this.field_150632_aF == BiomeForest.Type.FLOWER)
+@@ -82,6 +85,7 @@
+         }
+ 
+         this.func_185378_a(p_180624_1_, p_180624_2_, p_180624_3_, i);
++        }
+         super.func_180624_a(p_180624_1_, p_180624_2_, p_180624_3_);
+     }
+ 
+@@ -147,6 +151,22 @@
+         }
+     }
+ 
++    @Override
++    public void addDefaultFlowers()
++    {
++        if (field_150632_aF != BiomeForest.Type.FLOWER)
++        {
++            super.addDefaultFlowers();
++            return;
++        }
++        for (BlockFlower.EnumFlowerType type : BlockFlower.EnumFlowerType.values())
++        {
++            if (type.func_176964_a() == BlockFlower.EnumFlowerColor.YELLOW) continue;
++            if (type == BlockFlower.EnumFlowerType.BLUE_ORCHID) type = BlockFlower.EnumFlowerType.POPPY;
++            addFlower(net.minecraft.init.Blocks.field_150328_O.func_176223_P().func_177226_a(net.minecraft.init.Blocks.field_150328_O.func_176494_l(), type), 10);
++        }
++    }
++
+     public Class <? extends Biome > func_150562_l()
+     {
+         return BiomeForest.class;

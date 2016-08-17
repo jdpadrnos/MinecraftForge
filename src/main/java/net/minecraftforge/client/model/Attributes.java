@@ -1,6 +1,24 @@
+/*
+ * Minecraft Forge
+ * Copyright (c) 2016.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation version 2.1
+ * of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
 package net.minecraftforge.client.model;
 
-import java.nio.ByteBuffer;
 import java.util.List;
 
 import net.minecraft.client.renderer.vertex.VertexFormat;
@@ -18,10 +36,10 @@ public class Attributes
     static
     {
         DEFAULT_BAKED_FORMAT = new VertexFormat();
-        DEFAULT_BAKED_FORMAT.setElement(new VertexFormatElement(0, EnumType.FLOAT, EnumUsage.POSITION, 3));
-        DEFAULT_BAKED_FORMAT.setElement(new VertexFormatElement(0, EnumType.UBYTE, EnumUsage.COLOR,    4));
-        DEFAULT_BAKED_FORMAT.setElement(new VertexFormatElement(0, EnumType.FLOAT, EnumUsage.UV,       2));
-        DEFAULT_BAKED_FORMAT.setElement(new VertexFormatElement(0, EnumType.BYTE,  EnumUsage.PADDING,  4));
+        DEFAULT_BAKED_FORMAT.addElement(new VertexFormatElement(0, EnumType.FLOAT, EnumUsage.POSITION, 3));
+        DEFAULT_BAKED_FORMAT.addElement(new VertexFormatElement(0, EnumType.UBYTE, EnumUsage.COLOR,    4));
+        DEFAULT_BAKED_FORMAT.addElement(new VertexFormatElement(0, EnumType.FLOAT, EnumUsage.UV,       2));
+        DEFAULT_BAKED_FORMAT.addElement(new VertexFormatElement(0, EnumType.BYTE,  EnumUsage.PADDING,  4));
     }
 
     /*
@@ -34,7 +52,7 @@ public class Attributes
 
         int padding = 0;
         int j = 0;
-        for(VertexFormatElement firstAttr : (List<VertexFormatElement>)first.getElements())
+        for(VertexFormatElement firstAttr : first.getElements())
         {
             while(j < second.getElementCount() && second.getElement(j).getUsage() == EnumUsage.PADDING)
             {
@@ -68,40 +86,5 @@ public class Attributes
 
         if(padding != 0 || j != second.getElementCount()) return false;
         return true;
-    }
-
-    public static void put(ByteBuffer buf, VertexFormatElement e, boolean denormalize, Number fill, Number... ns)
-    {
-        if(e.getElementCount() > ns.length && fill == null) throw new IllegalArgumentException("not enough elements");
-        Number n;
-        for(int i = 0; i < e.getElementCount(); i++)
-        {
-            if(i < ns.length) n = ns[i];
-            else n = fill;
-            switch(e.getType())
-            {
-            case BYTE:
-                buf.put(denormalize ? (byte)(n.floatValue() * (Byte.MAX_VALUE - 1)) : n.byteValue());
-                break;
-            case UBYTE:
-                buf.put(denormalize ? (byte)(n.floatValue() * ((1 << Byte.SIZE) - 1)) : n.byteValue());
-                break;
-            case SHORT:
-                buf.putShort(denormalize ? (short)(n.floatValue() * (Short.MAX_VALUE - 1)) : n.shortValue());
-                break;
-            case USHORT:
-                buf.putShort(denormalize ? (short)(n.floatValue() * ((1 << Short.SIZE) - 1)) : n.shortValue());
-                break;
-            case INT:
-                buf.putInt(denormalize ? (int)(n.doubleValue() * (Integer.MAX_VALUE - 1)) : n.intValue());
-                break;
-            case UINT:
-                buf.putInt(denormalize ? (int)(n.doubleValue() * ((1L << Integer.SIZE) - 1)) : n.intValue());
-                break;
-            case FLOAT:
-                buf.putFloat(n.floatValue());
-                break;
-            }
-        }
     }
 }

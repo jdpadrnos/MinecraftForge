@@ -1,11 +1,31 @@
+/*
+ * Minecraft Forge
+ * Copyright (c) 2016.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation version 2.1
+ * of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
 package net.minecraftforge.event.world;
 
 import java.util.List;
 
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.Cancelable;
 import net.minecraftforge.fml.common.eventhandler.Event;
 import net.minecraft.entity.Entity;
-import net.minecraft.util.BlockPos;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
 
@@ -21,13 +41,23 @@ import net.minecraft.world.World;
  */
 public class ExplosionEvent extends Event
 {
-    public final World world;
-    public final Explosion explosion;
+    private final World world;
+    private final Explosion explosion;
 
     public ExplosionEvent(World world, Explosion explosion)
     {
         this.world = world;
         this.explosion = explosion;
+    }
+
+    public World getWorld()
+    {
+        return world;
+    }
+
+    public Explosion getExplosion()
+    {
+        return explosion;
     }
 
     /** ExplosionEvent.Start is fired before the explosion actually occurs.  Canceling this event will stop the explosion.<br>
@@ -64,7 +94,7 @@ public class ExplosionEvent extends Event
         /** return the list of blocks affected by the explosion. */
         public List<BlockPos> getAffectedBlocks()
         {
-            return explosion.func_180343_e();
+            return getExplosion().getAffectedBlockPositions();
         }
 
         /** return the list of entities affected by the explosion. */

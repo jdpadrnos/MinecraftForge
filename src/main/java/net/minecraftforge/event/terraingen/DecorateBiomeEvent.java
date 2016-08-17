@@ -1,15 +1,38 @@
+/*
+ * Minecraft Forge
+ * Copyright (c) 2016.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation version 2.1
+ * of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
 package net.minecraftforge.event.terraingen;
 
 import java.util.Random;
+
+import net.minecraft.world.biome.Biome;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.common.eventhandler.Cancelable;
 import net.minecraftforge.fml.common.eventhandler.Event;
 import net.minecraftforge.fml.common.eventhandler.Event.HasResult;
-import net.minecraft.util.BlockPos;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 /**DecorateBiomeEvent is fired when a BiomeDecorator is created.
  * <br>
  * This event is fired whenever a BiomeDecorator is created in
- * DeferredBiomeDecorator#fireCreateEventAndReplace(BiomeGenBase).<br>
+ * {@link DeferredBiomeDecorator#fireCreateEventAndReplace(Biome)}.<br>
  * <br>
  * {@link #world} contains the world that is being decorated. <br>
  * {@link #rand} contains an instance of Random to be used. <br>
@@ -23,15 +46,30 @@ import net.minecraft.world.World;
  **/
 public class DecorateBiomeEvent extends Event
 {
-    public final World world;
-    public final Random rand;
-    public final BlockPos pos;
+    private final World world;
+    private final Random rand;
+    private final BlockPos pos;
 
     public DecorateBiomeEvent(World world, Random rand, BlockPos pos)
     {
         this.world = world;
         this.rand = rand;
         this.pos = pos;
+    }
+
+    public World getWorld()
+    {
+        return world;
+    }
+
+    public Random getRand()
+    {
+        return rand;
+    }
+
+    public BlockPos getPos()
+    {
+        return pos;
     }
 
     /**
@@ -64,11 +102,16 @@ public class DecorateBiomeEvent extends Event
     @HasResult
     public static class Decorate extends DecorateBiomeEvent
     {
+        public EventType getType()
+        {
+            return type;
+        }
+
         /** Use CUSTOM to filter custom event types
          */
-        public static enum EventType { BIG_SHROOM, CACTUS, CLAY, DEAD_BUSH, LILYPAD, FLOWERS, GRASS, LAKE_WATER, LAKE_LAVA, PUMPKIN, REED, SAND, SAND_PASS2, SHROOM, TREE, CUSTOM }
+        public static enum EventType { BIG_SHROOM, CACTUS, CLAY, DEAD_BUSH, DESERT_WELL, LILYPAD, FLOWERS, FOSSIL, GRASS, ICE, LAKE_WATER, LAKE_LAVA, PUMPKIN, REED, ROCK, SAND, SAND_PASS2, SHROOM, TREE, CUSTOM }
 
-        public final EventType type;
+        private final EventType type;
 
         public Decorate(World world, Random rand, BlockPos pos, EventType type)
         {

@@ -1,13 +1,32 @@
 
+/*
+ * Minecraft Forge
+ * Copyright (c) 2016.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation version 2.1
+ * of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
 package net.minecraftforge.fluids;
 
 import java.util.Random;
 
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.util.BlockPos;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.EnumFacing;
-import net.minecraft.util.MathHelper;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
@@ -15,8 +34,6 @@ import net.minecraft.world.World;
  * This is a cellular-automata based finite fluid block implementation.
  *
  * It is highly recommended that you use/extend this class for finite fluid blocks.
- *
- * @author OvermindDL1, KingLemming
  *
  */
 public class BlockFluidFinite extends BlockFluidBase
@@ -30,7 +47,7 @@ public class BlockFluidFinite extends BlockFluidBase
     public int getQuantaValue(IBlockAccess world, BlockPos pos)
     {
         IBlockState state = world.getBlockState(pos);
-        if (state.getBlock().isAir(world, pos))
+        if (state.getBlock().isAir(state, world, pos))
         {
             return 0;
         }
@@ -39,13 +56,13 @@ public class BlockFluidFinite extends BlockFluidBase
         {
             return -1;
         }
-        return ((Integer)state.getValue(LEVEL)) + 1;
+        return state.getValue(LEVEL) + 1;
     }
 
     @Override
     public boolean canCollideCheck(IBlockState state, boolean fullHit)
     {
-        return fullHit && ((Integer)state.getValue(LEVEL)) == quantaPerBlock - 1;
+        return fullHit && state.getValue(LEVEL) == quantaPerBlock - 1;
     }
 
     @Override
@@ -58,7 +75,7 @@ public class BlockFluidFinite extends BlockFluidBase
     public void updateTick(World world, BlockPos pos, IBlockState state, Random rand)
     {
         boolean changed = false;
-        int quantaRemaining = ((Integer)state.getValue(LEVEL)) + 1;
+        int quantaRemaining = state.getValue(LEVEL) + 1;
 
         // Flow vertically if possible
         int prevRemaining = quantaRemaining;
@@ -83,7 +100,7 @@ public class BlockFluidFinite extends BlockFluidBase
         }
 
         // Flow out if possible
-        int lowerthan = quantaRemaining - 1;
+        int lowerThan = quantaRemaining - 1;
         int total = quantaRemaining;
         int count = 1;
 
@@ -93,7 +110,7 @@ public class BlockFluidFinite extends BlockFluidBase
             if (displaceIfPossible(world, off))
                 world.setBlockToAir(off);
 
-            int quanta = getQuantaValueBelow(world, off, lowerthan);
+            int quanta = getQuantaValueBelow(world, off, lowerThan);
             if (quanta >= 0)
             {
                 count++;
@@ -116,25 +133,25 @@ public class BlockFluidFinite extends BlockFluidBase
         for (EnumFacing side : EnumFacing.Plane.HORIZONTAL)
         {
             BlockPos off = pos.offset(side);
-            int quanta = getQuantaValueBelow(world, off, lowerthan);
+            int quanta = getQuantaValueBelow(world, off, lowerThan);
             if (quanta >= 0)
             {
-                int newquanta = each;
+                int newQuanta = each;
                 if (rem == count || rem > 1 && rand.nextInt(count - rem) != 0)
                 {
-                    ++newquanta;
+                    ++newQuanta;
                     --rem;
                 }
 
-                if (newquanta != quanta)
+                if (newQuanta != quanta)
                 {
-                    if (newquanta == 0)
+                    if (newQuanta == 0)
                     {
                         world.setBlockToAir(off);
                     }
                     else
                     {
-                        world.setBlockState(off, getDefaultState().withProperty(LEVEL, newquanta - 1), 2);
+                        world.setBlockState(off, getDefaultState().withProperty(LEVEL, newQuanta - 1), 2);
                     }
                     world.scheduleUpdate(off, this, tickRate);
                 }
@@ -228,13 +245,14 @@ public class BlockFluidFinite extends BlockFluidBase
     @Override
     public FluidStack drain(World world, BlockPos pos, boolean doDrain)
     {
+        final FluidStack fluidStack = new FluidStack(getFluid(), MathHelper.floor_float(getQuantaPercentage(world, pos) * Fluid.BUCKET_VOLUME));
+
         if (doDrain)
         {
             world.setBlockToAir(pos);
         }
 
-        return new FluidStack(getFluid(),
-                MathHelper.floor_float(getQuantaPercentage(world, pos) * FluidContainerRegistry.BUCKET_VOLUME));
+        return fluidStack;
     }
 
     @Override

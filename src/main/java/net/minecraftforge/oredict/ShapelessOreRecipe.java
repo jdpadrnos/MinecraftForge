@@ -1,3 +1,22 @@
+/*
+ * Minecraft Forge
+ * Copyright (c) 2016.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation version 2.1
+ * of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
 package net.minecraftforge.oredict;
 
 import java.util.ArrayList;
@@ -16,8 +35,8 @@ import net.minecraftforge.common.ForgeHooks;
 
 public class ShapelessOreRecipe implements IRecipe
 {
-    private ItemStack output = null;
-    private ArrayList<Object> input = new ArrayList<Object>();
+    protected ItemStack output = null;
+    protected ArrayList<Object> input = new ArrayList<Object>();
 
     public ShapelessOreRecipe(Block result, Object... recipe){ this(new ItemStack(result), recipe); }
     public ShapelessOreRecipe(Item  result, Object... recipe){ this(new ItemStack(result), recipe); }
@@ -56,17 +75,16 @@ public class ShapelessOreRecipe implements IRecipe
         }
     }
 
-    @SuppressWarnings("unchecked")
     ShapelessOreRecipe(ShapelessRecipes recipe, Map<ItemStack, String> replacements)
     {
         output = recipe.getRecipeOutput();
 
-        for(ItemStack ingred : ((List<ItemStack>)recipe.recipeItems))
+        for(ItemStack ingredient : recipe.recipeItems)
         {
-            Object finalObj = ingred;
+            Object finalObj = ingredient;
             for(Entry<ItemStack, String> replace : replacements.entrySet())
             {
-                if(OreDictionary.itemMatches(replace.getKey(), ingred, false))
+                if(OreDictionary.itemMatches(replace.getKey(), ingredient, false))
                 {
                     finalObj = OreDictionary.getOres(replace.getValue());
                     break;

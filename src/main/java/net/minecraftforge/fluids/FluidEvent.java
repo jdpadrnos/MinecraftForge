@@ -1,22 +1,56 @@
 
+/*
+ * Minecraft Forge
+ * Copyright (c) 2016.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation version 2.1
+ * of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
 package net.minecraftforge.fluids;
 
-import net.minecraft.util.BlockPos;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.Event;
 
 public class FluidEvent extends Event
 {
-    public final FluidStack fluid;
-    public final World world;
-    public final BlockPos pos;
+    private final FluidStack fluid;
+    private final World world;
+    private final BlockPos pos;
 
     public FluidEvent(FluidStack fluid, World world, BlockPos pos)
     {
         this.fluid = fluid;
         this.world = world;
         this.pos = pos;
+    }
+
+    public FluidStack getFluid()
+    {
+        return fluid;
+    }
+
+    public World getWorld()
+    {
+        return world;
+    }
+
+    public BlockPos getPos()
+    {
+        return pos;
     }
 
     /**
@@ -38,14 +72,24 @@ public class FluidEvent extends Event
      */
     public static class FluidFillingEvent extends FluidEvent
     {
-        public final IFluidTank tank;
-        public final int amount;
+        private final IFluidTank tank;
+        private final int amount;
 
         public FluidFillingEvent(FluidStack fluid, World world, BlockPos pos, IFluidTank tank, int amount)
         {
             super(fluid, world, pos);
             this.tank = tank;
             this.amount = amount;
+        }
+
+        public IFluidTank getTank()
+        {
+            return tank;
+        }
+
+        public int getAmount()
+        {
+            return amount;
         }
     }
 
@@ -56,14 +100,24 @@ public class FluidEvent extends Event
      */
     public static class FluidDrainingEvent extends FluidEvent
     {
-        public final IFluidTank tank;
-        public final int amount;
+        private final IFluidTank tank;
+        private final int amount;
 
         public FluidDrainingEvent(FluidStack fluid, World world, BlockPos pos, IFluidTank tank, int amount)
         {
             super(fluid, world, pos);
             this.amount = amount;
             this.tank = tank;
+        }
+
+        public IFluidTank getTank()
+        {
+            return tank;
+        }
+
+        public int getAmount()
+        {
+            return amount;
         }
     }
 

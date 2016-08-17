@@ -1,3 +1,22 @@
+/*
+ * Minecraft Forge
+ * Copyright (c) 2016.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation version 2.1
+ * of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
 package net.minecraftforge.oredict;
 
 import java.util.List;
@@ -17,14 +36,14 @@ import net.minecraftforge.common.ForgeHooks;
 public class ShapedOreRecipe implements IRecipe
 {
     //Added in for future ease of change, but hard coded for now.
-    private static final int MAX_CRAFT_GRID_WIDTH = 3;
-    private static final int MAX_CRAFT_GRID_HEIGHT = 3;
+    public static final int MAX_CRAFT_GRID_WIDTH = 3;
+    public static final int MAX_CRAFT_GRID_HEIGHT = 3;
 
-    private ItemStack output = null;
-    private Object[] input = null;
-    private int width = 0;
-    private int height = 0;
-    private boolean mirrored = true;
+    protected ItemStack output = null;
+    protected Object[] input = null;
+    protected int width = 0;
+    protected int height = 0;
+    protected boolean mirrored = true;
 
     public ShapedOreRecipe(Block     result, Object... recipe){ this(new ItemStack(result), recipe); }
     public ShapedOreRecipe(Item      result, Object... recipe){ this(new ItemStack(result), recipe); }
@@ -135,15 +154,15 @@ public class ShapedOreRecipe implements IRecipe
 
         for(int i = 0; i < input.length; i++)
         {
-            ItemStack ingred = recipe.recipeItems[i];
+            ItemStack ingredient = recipe.recipeItems[i];
 
-            if(ingred == null) continue;
+            if(ingredient == null) continue;
 
             input[i] = recipe.recipeItems[i];
 
             for(Entry<ItemStack, String> replace : replacements.entrySet())
             {
-                if(OreDictionary.itemMatches(replace.getKey(), ingred, true))
+                if(OreDictionary.itemMatches(replace.getKey(), ingredient, true))
                 {
                     input[i] = OreDictionary.getOres(replace.getValue());
                     break;
@@ -184,7 +203,7 @@ public class ShapedOreRecipe implements IRecipe
     }
 
     @SuppressWarnings("unchecked")
-    private boolean checkMatch(InventoryCrafting inv, int startX, int startY, boolean mirror)
+    protected boolean checkMatch(InventoryCrafting inv, int startX, int startY, boolean mirror)
     {
         for (int x = 0; x < MAX_CRAFT_GRID_WIDTH; x++)
         {

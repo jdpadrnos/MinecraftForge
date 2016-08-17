@@ -1,15 +1,30 @@
+/*
+ * Minecraft Forge
+ * Copyright (c) 2016.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation version 2.1
+ * of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
 package net.minecraftforge.event.world;
 
-import com.google.common.base.Preconditions;
-
-import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.init.Blocks;
-import net.minecraft.util.BlockPos;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.fml.common.eventhandler.Cancelable;
-import net.minecraftforge.fml.common.eventhandler.Event;
+
+import com.google.common.base.Preconditions;
 
 /**
  * Base class for Noteblock Events
@@ -19,7 +34,7 @@ public class NoteBlockEvent extends BlockEvent
 {
     private int noteId;
 
-    NoteBlockEvent(World world, BlockPos pos, IBlockState state, int note)
+    protected NoteBlockEvent(World world, BlockPos pos, IBlockState state, int note)
     {
         super(world, pos, state);
         this.noteId = note;
@@ -71,12 +86,22 @@ public class NoteBlockEvent extends BlockEvent
     @Cancelable
     public static class Play extends NoteBlockEvent
     {
-        public Instrument instrument;
+        private Instrument instrument;
 
         public Play(World world, BlockPos pos, IBlockState state, int note, int instrument)
         {
             super(world, pos, state, note);
-            this.instrument = Instrument.fromId(instrument);
+            this.setInstrument(Instrument.fromId(instrument));
+        }
+
+        public Instrument getInstrument()
+        {
+            return instrument;
+        }
+
+        public void setInstrument(Instrument instrument)
+        {
+            this.instrument = instrument;
         }
     }
 
@@ -87,14 +112,24 @@ public class NoteBlockEvent extends BlockEvent
     @Cancelable
     public static class Change extends NoteBlockEvent
     {
-        public final Note oldNote;
-        public final Octave oldOctave;
+        private final Note oldNote;
+        private final Octave oldOctave;
 
         public Change(World world, BlockPos pos, IBlockState state, int oldNote, int newNote)
         {
             super(world, pos, state, newNote);
             this.oldNote = Note.fromId(oldNote);
             this.oldOctave = Octave.fromId(oldNote);
+        }
+
+        public Note getOldNote()
+        {
+            return oldNote;
+        }
+
+        public Octave getOldOctave()
+        {
+            return oldOctave;
         }
     }
 

@@ -7,7 +7,7 @@ import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
-@Mod(modid="NeighborNotifyEventTest", name="NeighborNotifyEventTest", version="0.0.0")
+@Mod(modid="neighbornotifyeventtest", name="NeighborNotifyEventTest", version="0.0.0")
 public class NeighborNotifyEventTest 
 {
 
@@ -23,7 +23,7 @@ public class NeighborNotifyEventTest
     public void onNeighborNotify(NeighborNotifyEvent event) 
     {
         if(ENABLE) {
-            System.out.println(event.pos.toString());
+            System.out.println(event.getPos().toString() + " with face information: " + event.getNotifiedSides());
             event.setCanceled(true);
         }
     }

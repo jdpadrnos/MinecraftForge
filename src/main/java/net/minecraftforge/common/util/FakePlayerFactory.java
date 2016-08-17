@@ -1,3 +1,22 @@
+/*
+ * Minecraft Forge
+ * Copyright (c) 2016.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation version 2.1
+ * of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
 package net.minecraftforge.common.util;
 
 import java.lang.ref.WeakReference;
@@ -10,7 +29,6 @@ import com.google.common.collect.Maps;
 import com.mojang.authlib.GameProfile;
 
 import net.minecraft.world.WorldServer;
-import net.minecraftforge.common.DimensionManager;
 
 //To be expanded for generic Mod fake players?
 public class FakePlayerFactory
@@ -26,7 +44,7 @@ public class FakePlayerFactory
         if (ret == null)
         {
             ret = FakePlayerFactory.get(world,  MINECRAFT);
-            MINECRAFT_PLAYER = new WeakReference(ret);
+            MINECRAFT_PLAYER = new WeakReference<FakePlayer>(ret);
         }
         return ret;
     }

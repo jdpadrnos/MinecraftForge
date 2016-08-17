@@ -1,6 +1,20 @@
 --- ../src-base/minecraft/net/minecraft/item/Item.java
 +++ ../src-work/minecraft/net/minecraft/item/Item.java
-@@ -129,6 +129,7 @@
+@@ -57,10 +57,10 @@
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
+ 
+-public class Item
++public class Item extends net.minecraftforge.fml.common.registry.IForgeRegistryEntry.Impl<Item>
+ {
+-    public static final RegistryNamespaced<ResourceLocation, Item> field_150901_e = new RegistryNamespaced();
+-    private static final Map<Block, Item> field_179220_a = Maps.<Block, Item>newHashMap();
++    public static final RegistryNamespaced<ResourceLocation, Item> field_150901_e = net.minecraftforge.fml.common.registry.GameData.getItemRegistry();;
++    private static final Map<Block, Item> field_179220_a = net.minecraftforge.fml.common.registry.GameData.getBlockItemMap();
+     private static final IItemPropertyGetter field_185046_b = new IItemPropertyGetter()
+     {
+         @SideOnly(Side.CLIENT)
+@@ -196,6 +196,7 @@
          return p_77654_1_;
      }
  
@@ -8,7 +22,7 @@
      public int func_77639_j()
      {
          return this.field_77777_bU;
-@@ -242,6 +243,7 @@
+@@ -316,6 +317,7 @@
          return this.field_77700_c;
      }
  
@@ -16,7 +30,7 @@
      public boolean func_77634_r()
      {
          return this.field_77700_c != null;
-@@ -311,7 +313,7 @@
+@@ -371,7 +373,7 @@
  
      public boolean func_77616_k(ItemStack p_77616_1_)
      {
@@ -24,35 +38,37 @@
 +        return this.getItemStackLimit(p_77616_1_) == 1 && this.func_77645_m();
      }
  
-     protected MovingObjectPosition func_77621_a(World p_77621_1_, EntityPlayer p_77621_2_, boolean p_77621_3_)
-@@ -329,6 +331,10 @@
+     protected RayTraceResult func_77621_a(World p_77621_1_, EntityPlayer p_77621_2_, boolean p_77621_3_)
+@@ -389,7 +391,11 @@
          float f6 = f3 * f4;
          float f7 = f2 * f4;
          double d3 = 5.0D;
+-        Vec3d vec3d1 = vec3d.func_72441_c((double)f6 * 5.0D, (double)f5 * 5.0D, (double)f7 * 5.0D);
 +        if (p_77621_2_ instanceof net.minecraft.entity.player.EntityPlayerMP)
 +        {
 +            d3 = ((net.minecraft.entity.player.EntityPlayerMP)p_77621_2_).field_71134_c.getBlockReachDistance();
 +        }
-         Vec3 vec31 = vec3.func_72441_c((double)f6 * d3, (double)f5 * d3, (double)f7 * d3);
-         return p_77621_1_.func_147447_a(vec3, vec31, p_77621_3_, !p_77621_3_, false);
++        Vec3d vec3d1 = vec3d.func_72441_c((double)f6 * d3, (double)f5 * d3, (double)f7 * d3);
+         return p_77621_1_.func_147447_a(vec3d, vec3d1, p_77621_3_, !p_77621_3_, false);
      }
-@@ -366,11 +372,564 @@
+ 
+@@ -426,11 +432,569 @@
          return false;
      }
  
 +    @Deprecated // Use ItemStack sensitive version below.
-     public Multimap func_111205_h()
+     public Multimap<String, AttributeModifier> func_111205_h(EntityEquipmentSlot p_111205_1_)
      {
-         return HashMultimap.create();
+         return HashMultimap.<String, AttributeModifier>create();
      }
  
 +    /* ======================================== FORGE START =====================================*/
 +    /**
 +     * ItemStack sensitive version of getItemAttributeModifiers
 +     */
-+    public Multimap getAttributeModifiers(ItemStack stack)
++    public Multimap<String, AttributeModifier> getAttributeModifiers(EntityEquipmentSlot slot, ItemStack stack)
 +    {
-+        return this.func_111205_h();
++        return this.func_111205_h(slot);
 +    }
 +
 +    /**
@@ -70,30 +86,32 @@
 +    }
 +
 +    /**
++     * Allow the item one last chance to modify its name used for the
++     * tool highlight useful for adding something extra that can't be removed
++     * by a user in the displayed name, such as a mode of operation.
++     *
++     * @param item the ItemStack for the item.
++     * @param displayName the name that will be displayed unless it is changed in this method.
++     */
++    public String getHighlightTip( ItemStack item, String displayName )
++    {
++        return displayName;
++    }
++
++    /**
 +     * This is called when the item is used, before the block is activated.
 +     * @param stack The Item Stack
 +     * @param player The Player that used the item
 +     * @param world The Current World
 +     * @param pos Target position
 +     * @param side The side of the target hit
-+     * @return Return true to prevent any further processing.
++     * @param hand Which hand the item is being held in.
++     * @return Return PASS to allow vanilla handling, any other to skip normal code.
 +     */
-+    public boolean onItemUseFirst(ItemStack stack, EntityPlayer player, World world, BlockPos pos, EnumFacing side, float hitX, float hitY, float hitZ)
++    public EnumActionResult onItemUseFirst(ItemStack stack, EntityPlayer player, World world, BlockPos pos, EnumFacing side, float hitX, float hitY, float hitZ, EnumHand hand)
 +    {
-+        return false;
++        return EnumActionResult.PASS;
 +    }
-+
-+    /**
-+     * Metadata-sensitive version of getStrVsBlock
-+     * @param itemstack The Item Stack
-+     * @param state The block state
-+     * @return The damage strength
-+     */
-+    public float getDigSpeed(ItemStack itemstack, net.minecraft.block.state.IBlockState state)
-+    {
-+        return func_150893_a(itemstack, state.func_177230_c());
-+    }
-+
 +
 +    protected boolean canRepair = true;
 +    /**
@@ -136,7 +154,7 @@
 +     * @param player The Player using the item
 +     * @param count The amount of time in tick the item has been used for continuously
 +     */
-+    public void onUsingTick(ItemStack stack, EntityPlayer player, int count)
++    public void onUsingTick(ItemStack stack, EntityLivingBase player, int count)
 +    {
 +    }
 +
@@ -153,20 +171,6 @@
 +    public boolean onLeftClickEntity(ItemStack stack, EntityPlayer player, Entity entity)
 +    {
 +        return false;
-+    }
-+
-+    /**
-+     * Player, Render pass, and item usage sensitive version of getIconIndex.
-+     *
-+     * @param stack The item stack to get the icon for.
-+     * @param player The player holding the item
-+     * @param useRemaining The ticks remaining for the active item.
-+     * @return Null to use default model, or a custom ModelResourceLocation for the stage of use.
-+     */
-+    @SideOnly(Side.CLIENT)
-+    public net.minecraft.client.resources.model.ModelResourceLocation getModel(ItemStack stack, EntityPlayer player, int useRemaining)
-+    {
-+        return null;
 +    }
 +
 +    /**
@@ -274,40 +278,6 @@
 +    }
 +
 +    /**
-+     * Return the correct icon for rendering based on the supplied ItemStack and render pass.
-+     *
-+     * Defers to {@link #getIconFromDamageForRenderPass(int, int)}
-+     * @param stack to render for
-+     * @param pass the multi-render pass
-+     * @return the icon
-+     * /
-+    public IIcon getIcon(ItemStack stack, int pass)
-+    {
-+        return func_77618_c(stack.getMetadata(), pass);
-+    }
-+    */
-+
-+    /**
-+     * Generates the base Random item for a specific instance of the chest gen,
-+     * Enchanted books use this to pick a random enchantment.
-+     *
-+     * @param chest The chest category to generate for
-+     * @param rnd World RNG
-+     * @param original Original result registered with the chest gen hooks.
-+     * @return New values to use as the random item, typically this will be original
-+     */
-+    public net.minecraft.util.WeightedRandomChestContent getChestGenBase(net.minecraftforge.common.ChestGenHooks chest, Random rnd, net.minecraft.util.WeightedRandomChestContent original)
-+    {
-+        if (this instanceof ItemEnchantedBook)
-+        {
-+            return ((ItemEnchantedBook)this).func_92112_a(rnd,
-+                    original.field_76295_d,
-+                    original.field_76296_e, original.field_76292_a);
-+        }
-+        return original;
-+    }
-+
-+    /**
 +     *
 +     * Should this item, when held, allow sneak-clicks to pass through to the underlying block?
 +     *
@@ -316,7 +286,7 @@
 +     * @param player The Player that is wielding the item
 +     * @return
 +     */
-+    public boolean doesSneakBypassUse(World world, BlockPos pos, EntityPlayer player)
++    public boolean doesSneakBypassUse(ItemStack stack, net.minecraft.world.IBlockAccess world, BlockPos pos, EntityPlayer player)
 +    {
 +        return false;
 +    }
@@ -334,19 +304,9 @@
 +     * @param entity The entity trying to equip the armor
 +     * @return True if the given ItemStack can be inserted in the slot
 +     */
-+    public boolean isValidArmor(ItemStack stack, int armorType, Entity entity)
++    public boolean isValidArmor(ItemStack stack, EntityEquipmentSlot armorType, Entity entity)
 +    {
-+        if (this instanceof ItemArmor)
-+        {
-+            return ((ItemArmor)this).field_77881_a == armorType;
-+        }
-+
-+        if (armorType == 0)
-+        {
-+            return this == Item.func_150898_a(Blocks.field_150423_aK) || this == Items.field_151144_bL;
-+        }
-+
-+        return false;
++        return net.minecraft.entity.EntityLiving.func_184640_d(stack) == armorType;
 +    }
 +
 +    /**
@@ -374,7 +334,7 @@
 +     * @param type The subtype, can be null or "overlay"
 +     * @return Path of texture to bind, or null to use default
 +     */
-+    public String getArmorTexture(ItemStack stack, Entity entity, int slot, String type)
++    public String getArmorTexture(ItemStack stack, Entity entity, EntityEquipmentSlot slot, String type)
 +    {
 +        return null;
 +    }
@@ -397,12 +357,12 @@
 +     *
 +     * @param  entityLiving  The entity wearing the armor
 +     * @param  itemStack  The itemStack to render the model of
-+     * @param  armorSlot  0=head, 1=torso, 2=legs, 3=feet
-+     *
++     * @param  armorSlot  The slot the armor is in
++     * @param _default Original armor model. Will have attributes set.
 +     * @return  A ModelBiped to render instead of the default
 +     */
 +    @SideOnly(Side.CLIENT)
-+    public net.minecraft.client.model.ModelBiped getArmorModel(EntityLivingBase entityLiving, ItemStack itemStack, int armorSlot)
++    public net.minecraft.client.model.ModelBiped getArmorModel(EntityLivingBase entityLiving, ItemStack itemStack, EntityEquipmentSlot armorSlot, net.minecraft.client.model.ModelBiped _default)
 +    {
 +        return null;
 +    }
@@ -514,14 +474,14 @@
 +    }
 +
 +    /**
-+     * ItemStack sensitive version of {@link #canHarvestBlock(Block)}
-+     * @param par1Block The block trying to harvest
-+     * @param itemStack The itemstack used to harvest the block
++     * ItemStack sensitive version of {@link #canHarvestBlock(IBlockState)}
++     * @param state The block trying to harvest
++     * @param stack The itemstack used to harvest the block
 +     * @return true if can harvest the block
 +     */
-+    public boolean canHarvestBlock(Block par1Block, ItemStack itemStack)
++    public boolean canHarvestBlock(IBlockState state, ItemStack stack)
 +    {
-+        return func_150897_b(par1Block);
++        return func_150897_b(state);
 +    }
 +
 +    /**
@@ -529,7 +489,7 @@
 +     * This is a ItemStack (and thus NBT) sensitive version of Item.getItemStackLimit()
 +     *
 +     * @param stack The ItemStack
-+     * @return THe maximum number this item can be stacked to
++     * @return The maximum number this item can be stacked to
 +     */
 +    public int getItemStackLimit(ItemStack stack)
 +    {
@@ -595,15 +555,76 @@
 +    {
 +        return this == Items.field_151166_bC || this == Items.field_151045_i || this == Items.field_151043_k || this == Items.field_151042_j;
 +    }
-+    /* ======================================== FORGE END   =====================================*/
 +
++    /**
++     * Determine if the player switching between these two item stacks
++     * @param oldStack The old stack that was equipped
++     * @param newStack The new stack
++     * @param slotChanged If the current equipped slot was changed,
++     *                    Vanilla does not play the animation if you switch between two
++     *                    slots that hold the exact same item.
++     * @return True to play the item change animation
++     */
++    public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack, boolean slotChanged)
++    {
++        return !oldStack.equals(newStack); //!ItemStack.areItemStacksEqual(oldStack, newStack);
++    }
++
++    /**
++     * Called when the player is mining a block and the item in his hand changes.
++     * Allows to not reset blockbreaking if only NBT or similar changes.
++     * @param oldStack The old stack that was used for mining. Item in players main hand
++     * @param newStack The new stack
++     * @return True to reset block break progress
++     */
++    public boolean shouldCauseBlockBreakReset(ItemStack oldStack, ItemStack newStack)
++    {
++        return !(newStack.func_77973_b() == oldStack.func_77973_b() && ItemStack.func_77970_a(newStack, oldStack) && (newStack.func_77984_f() || newStack.func_77960_j() == oldStack.func_77960_j()));
++    }
++
++    /**
++     * Called from ItemStack.setItem, will hold extra data for the life of this ItemStack.
++     * Can be retrieved from stack.getCapabilities()
++     * The NBT can be null if this is not called from readNBT or if the item the stack is
++     * changing FROM is different then this item, or the previous item had no capabilities.
++     *
++     * This is called BEFORE the stacks item is set so you can use stack.getItem() to see the OLD item.
++     * Remember that getItem CAN return null.
++     *
++     * @param stack The ItemStack
++     * @param nbt NBT of this item serialized, or null.
++     * @return A holder instance associated with this ItemStack where you can hold capabilities for the life of this item.
++     */
++    public net.minecraftforge.common.capabilities.ICapabilityProvider initCapabilities(ItemStack stack, NBTTagCompound nbt)
++    {
++        return null;
++    }
++
++    public com.google.common.collect.ImmutableMap<String, net.minecraftforge.common.animation.ITimeValue> getAnimationParameters(final ItemStack stack, final World world, final EntityLivingBase entity)
++    {
++        com.google.common.collect.ImmutableMap.Builder<String, net.minecraftforge.common.animation.ITimeValue> builder = com.google.common.collect.ImmutableMap.builder();
++        for(ResourceLocation location : field_185051_m.func_148742_b())
++        {
++            final IItemPropertyGetter parameter = field_185051_m.func_82594_a(location);
++            builder.put(location.toString(), new net.minecraftforge.common.animation.ITimeValue()
++            {
++                public float apply(float input)
++                {
++                    return parameter.func_185085_a(stack, world, entity);
++                }
++            });
++        }
++        return builder.build();
++    }
++
++    /* ======================================== FORGE END   =====================================*/
 +
      public static void func_150900_l()
      {
-         func_179214_a(Blocks.field_150348_b, (new ItemMultiTexture(Blocks.field_150348_b, Blocks.field_150348_b, new Function()
-@@ -936,6 +1495,10 @@
- 
-         private static final String __OBFID = "CL_00000042";
+         func_179214_a(Blocks.field_150348_b, (new ItemMultiTexture(Blocks.field_150348_b, Blocks.field_150348_b, new Function<ItemStack, String>()
+@@ -962,6 +1526,10 @@
+         private final float field_78011_i;
+         private final int field_78008_j;
  
 +        //Added by forge for custom Tool materials.
 +        @Deprecated public Item customCraftingMaterial = null; // Remote in 1.8.1
@@ -612,21 +633,21 @@
          private ToolMaterial(int p_i1874_3_, int p_i1874_4_, float p_i1874_5_, float p_i1874_6_, int p_i1874_7_)
          {
              this.field_78001_f = p_i1874_3_;
-@@ -970,9 +1533,36 @@
+@@ -996,9 +1564,36 @@
              return this.field_78008_j;
          }
  
 +        @Deprecated // Use getRepairItemStack below
          public Item func_150995_f()
          {
--            return this == WOOD ? Item.func_150898_a(Blocks.field_150344_f) : (this == STONE ? Item.func_150898_a(Blocks.field_150347_e) : (this == GOLD ? Items.field_151043_k : (this == IRON ? Items.field_151042_j : (this == EMERALD ? Items.field_151045_i : null))));
+-            return this == WOOD ? Item.func_150898_a(Blocks.field_150344_f) : (this == STONE ? Item.func_150898_a(Blocks.field_150347_e) : (this == GOLD ? Items.field_151043_k : (this == IRON ? Items.field_151042_j : (this == DIAMOND ? Items.field_151045_i : null))));
 +            switch (this)
 +            {
 +                case WOOD:    return Item.func_150898_a(Blocks.field_150344_f);
 +                case STONE:   return Item.func_150898_a(Blocks.field_150347_e);
 +                case GOLD:    return Items.field_151043_k;
 +                case IRON:    return Items.field_151042_j;
-+                case EMERALD: return Items.field_151045_i;
++                case DIAMOND: return Items.field_151045_i;
 +                default:      return customCraftingMaterial;
 +            }
          }
@@ -634,7 +655,7 @@
 +        public ToolMaterial setRepairItem(ItemStack stack)
 +        {
 +            if (this.repairMaterial != null || customCraftingMaterial != null) throw new RuntimeException("Can not change already set repair material");
-+            if (this == WOOD || this == STONE || this == GOLD || this == IRON || this == EMERALD) throw new RuntimeException("Can not change vanilla tool repair materials");
++            if (this == WOOD || this == STONE || this == GOLD || this == IRON || this == DIAMOND) throw new RuntimeException("Can not change vanilla tool repair materials");
 +            this.repairMaterial = stack;
 +            this.customCraftingMaterial = stack.func_77973_b();
 +            return this;
