@@ -312,7 +312,7 @@
          }
  
          return BiomeGenBase.func_150568_d(k) == null ? BiomeGenBase.field_76772_c : BiomeGenBase.func_150568_d(k);
-@@ -1269,11 +1303,37 @@
+@@ -1269,11 +1303,36 @@
          return this.field_76651_r;
      }
  
@@ -321,7 +321,7 @@
 +    public int[] getBiomeArray512()
 +    {
 +        int[] biomestagingarray = new int[256];
-+        for (int i=0; i<256; i++) {
++        for (int i=0; i<4096; i++) {
 +            biomestagingarray[i] = (((int) this.field_76651_r[i] & 255) | (((int) this.blockBiomeMetadataArray[i]) << 8));
 +        }
 +        return biomestagingarray;
@@ -336,7 +336,6 @@
 +
 +    public void setBiomeArray512(int[] p_76616_1_) {
 +        int[] setbiomestagingarray = new int[256];
-+        setbiomestagingarray = p_76616_1_;
 +        byte[] higharray = new byte[256];
 +        byte[] lowarray = new byte[256];
 +        for (int i=0; i<4096; i++) {
@@ -350,7 +349,7 @@
      public void func_76613_n()
      {
          this.field_76649_t = 0;
-@@ -1450,4 +1510,48 @@
+@@ -1450,4 +1509,48 @@
  
          return true;
      }
