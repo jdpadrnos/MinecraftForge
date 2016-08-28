@@ -139,23 +139,10 @@
              this.func_75824_a(p_75816_2_.func_76632_l(), nbttagcompound);
          }
          catch (Exception exception)
-@@ -252,6 +328,7 @@
- 
-         p_75820_3_.func_74782_a("Sections", nbttaglist);
-         p_75820_3_.func_74773_a("Biomes", p_75820_1_.func_76605_m());
-+        p_75820_3_.func_74773_a("BiomesMeta", p_75820_1_.getBiomeMetadataArray());
-         p_75820_1_.field_76644_m = false;
-         NBTTagList nbttaglist2 = new NBTTagList();
-         Iterator iterator1;
-@@ -373,6 +450,17 @@
+@@ -373,6 +449,12 @@
              chunk.func_76616_a(p_75823_2_.func_74770_j("Biomes"));
          }
  
-+        if (p_75823_2_.func_150297_b("BiomesMeta", 7))
-+        {
-+            chunk.setBiomeMetadataArray(p_75823_2_.func_74770_j("BiomesMeta"));
-+        }
-+
 +        // End this method here and split off entity loading to another method
 +        return chunk;
 +    }
@@ -165,7 +152,7 @@
          NBTTagList nbttaglist1 = p_75823_2_.func_150295_c("Entities", 10);
  
          if (nbttaglist1 != null)
-@@ -434,7 +522,7 @@
+@@ -434,7 +516,7 @@
              }
          }
  

@@ -62,7 +62,7 @@
          byte b0 = 64;
          double d0 = 0.03125D;
          this.field_73185_q = this.field_73177_m.func_76304_a(this.field_73185_q, p_147418_1_ * 16, p_147418_2_ * 16, 0, 16, 16, 1, d0, d0, 1.0D);
-@@ -234,17 +266,18 @@
+@@ -234,12 +266,13 @@
      {
          this.field_73181_i.setSeed((long)p_73154_1_ * 341873128712L + (long)p_73154_2_ * 132897987541L);
          Block[] ablock = new Block[32768];
@@ -75,17 +75,10 @@
          this.field_73172_c.func_151539_a(this, this.field_73175_o, p_73154_1_, p_73154_2_, ablock);
 -        Chunk chunk = new Chunk(this.field_73175_o, ablock, p_73154_1_, p_73154_2_);
 -        BiomeGenBase[] abiomegenbase = this.field_73175_o.func_72959_q().func_76933_b((BiomeGenBase[])null, p_73154_1_ * 16, p_73154_2_ * 16, 16, 16);
--        byte[] abyte = chunk.func_76605_m();
 +        Chunk chunk = new Chunk(this.field_73175_o, ablock, meta, p_73154_1_, p_73154_2_);
-+        int[] abyte = chunk.getBiomeArray512();
+         byte[] abyte = chunk.func_76605_m();
  
          for (int k = 0; k < abyte.length; ++k)
-         {
--            abyte[k] = (byte)abiomegenbase[k].field_76756_M;
-+            abyte[k] = (int)abiomegenbase[k].field_76756_M;
-         }
- 
-         chunk.func_76613_n();
 @@ -253,6 +286,10 @@
  
      private double[] func_73164_a(double[] p_73164_1_, int p_73164_2_, int p_73164_3_, int p_73164_4_, int p_73164_5_, int p_73164_6_, int p_73164_7_)

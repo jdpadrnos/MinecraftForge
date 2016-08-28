@@ -667,10 +667,9 @@ public class GuiIngameForge extends GuiIngame
             if (mc.theWorld != null && mc.theWorld.blockExists(x, y, z))
             {
                 Chunk chunk = this.mc.theWorld.getChunkFromBlockCoords(x, z);
-                left.add(String.format("lc: %d b: %s bid %d bl: %d sl: %d rl: %d",
+                left.add(String.format("lc: %d b: %s bl: %d sl: %d rl: %d",
                   chunk.getTopFilledSegment() + 15,
                   chunk.getBiomeGenForWorldCoords(x & 15, z & 15, mc.theWorld.getWorldChunkManager()).biomeName,
-                        chunk.getBiomeGenForWorldCoords(x & 15, z & 15, mc.theWorld.getWorldChunkManager()).biomeID,
                   chunk.getSavedLightValue(EnumSkyBlock.Block, x & 15, y, z & 15),
                   chunk.getSavedLightValue(EnumSkyBlock.Sky, x & 15, y, z & 15),
                   chunk.getBlockLightValue(x & 15, y, z & 15, 0)));
