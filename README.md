@@ -1,3 +1,13 @@
+A version of Forge in the process of being modified to support up to 32,768 biomes.
+
+Uses a modified version of the Anvil format with the extended biome ID split over the original "Biomes" byte array (low 8 bits), and the new "BiomesUpper" byte array (high 8 bits).
+
+Mods aware of the extended biome array can get the combined biome array as a short array using GetShortBiomeArray(); high and low bytes can also be retrieved separately by using GetBiomeArray() (low bits) and GetUpperBiomeArray() (high bits). Biomes can be set using either setCombinedBiomeArray() (pass a short array); or setUpperBiomeArray() (high bits) and setLowerBiomeArray() (low bits); or both at once by passing two byte arrays to setBothBiomeArrays(low, high). Do not use setBiomeArray() to set the low bits, as it clears the high-bit array for compatibility purposes.
+
+Mods unaware of extended biomes will only see the lowest 8 bits when using GetBiomeArray, which may produce strange behavior. Calls to SetBiomeArray will probably mess up the biomes in the chunk where it's used, so don't use area-altering rituals from unpatched mods!
+
+# ORIGINAL README BELOW.
+
 # How to install Forge: For Players
 
 Go to [http://files.minecraftforge.net](http://files.minecraftforge.net)
